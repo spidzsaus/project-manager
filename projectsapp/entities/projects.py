@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, Iterable
 from dataclasses import dataclass
 from uuid import UUID
 
+from projectsapp.entities import IDComparable
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
     from projectsapp.entities.tasks import Task
     from projectsapp.entities.users import User
 
-@dataclass
-class Project:
+@dataclass(eq=False)
+class Project(IDComparable):
     id: UUID
     name: str
     repo: Repo
@@ -20,3 +21,4 @@ class Project:
     
     def get_users(self) -> Iterable[User]:
         return self.repo.get_users_for_project(self)
+    

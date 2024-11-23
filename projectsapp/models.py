@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from django.db import models
 
@@ -11,7 +12,11 @@ if TYPE_CHECKING:
     from projectsapp.repo import Repo
 
 class ProjectModel(models.Model):
-    id = models.AutoField(primary_key=True, unique=True)
+    id = models.UUIDField( 
+        primary_key = True, 
+        default = uuid4, 
+        editable = False
+    ) 
     name = models.CharField(max_length=128)
     # ...
 
@@ -26,7 +31,10 @@ class TaskModel(models.Model):
         IN_PROCESS = 1
         DONE = 2
 
-    id = models.AutoField(primary_key=True, unique=True)
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid4, 
+         editable = False) 
     name = models.CharField(max_length=128)
     parent_project = models.ForeignKey(ProjectModel, null=False, on_delete=models.CASCADE)
     status = models.IntegerField(choices=Status, default=Status.TODO)
@@ -48,7 +56,11 @@ class TaskModel(models.Model):
 
 
 class UserModel(models.Model):
-    id = models.AutoField(primary_key=True, unique=True)
+    id = models.UUIDField( 
+        primary_key = True, 
+        default = uuid4, 
+        editable = False
+    ) 
     name = models.CharField(max_length=128)
     # ...
 
@@ -58,12 +70,20 @@ class UserModel(models.Model):
 
 
 class MembershipModel(models.Model):
-    id = models.AutoField(primary_key=True, unique=True)
+    id = models.UUIDField( 
+        primary_key = True, 
+        default = uuid4, 
+        editable = False
+    ) 
     user = models.ForeignKey(UserModel, null=False, on_delete=models.CASCADE)
     project = models.ForeignKey(ProjectModel, null=False, on_delete=models.CASCADE)
     is_admin = models.BooleanField(default=False)
 
 class TaskAssignmentModel(models.Model):
-    id = models.AutoField(primary_key=True, unique=True)
+    id = models.UUIDField( 
+        primary_key = True, 
+        default = uuid4, 
+        editable = False
+    ) 
     user = models.ForeignKey(UserModel, null=False, on_delete=models.CASCADE)
     task = models.ForeignKey(TaskModel, null=False, on_delete=models.CASCADE)

@@ -6,13 +6,14 @@ from uuid import UUID
 from enum import Enum
 from datetime import datetime
 
+from projectsapp.entities import IDComparable
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
     from projectsapp.entities.projects import Project
     from projectsapp.entities.users import User
 
-@dataclass
-class Task:
+@dataclass(eq=False)
+class Task(IDComparable):
     class Status(Enum):
         TODO = 0
         IN_PROCESS = 1
@@ -34,4 +35,3 @@ class Task:
     
     def unassign_user(self, user: User):
         return self.repo.unassign_user_from_task(user, self)
-
