@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="mb-4">
+  <a href="/create_project" class="btn btn-primary">New project</a>
+</div>
 {% for project in projects_list %}
   <div class="card">
     <div class="card-header">
@@ -15,3 +18,4 @@
   <br />
 {% endfor %}
 {% endblock content %}
+

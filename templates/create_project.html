@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form action="/create_project" method="post">
+<a href="/projects" class="btn btn-default">←</a>
+<form action="" method="post">
     {% csrf_token %}
     {{ form }}
     <input type="submit" value="Submit">

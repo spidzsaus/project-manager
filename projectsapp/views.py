@@ -77,13 +77,13 @@ def create_task(request, project_id: UUID):
             repo.insert_task(task)
 
             task.assign_user(user)
-            
+
 
             return redirect("projectsapp:project", project_id=project_id)
     else:
         form = CreateTaskForm(users=users_choices) # todo: pagination
 
-    return render(request, "create_task.html", {"form": form})
+    return render(request, "create_task.html", {"form": form, "project": project})
 
 def project(request, project_id: UUID):
     user = mock_authenticate()
@@ -106,7 +106,7 @@ def projects(request):
     # Возвращаем страницу с карточками проектов.
     # Страница генерируется на основе шаблона test.html
     # с подстановкой списка проектов в параметр projects_list
-    return render(request, "test.html", {"projects_list": projects_list})
+    return render(request, "projects.html", {"projects_list": projects_list})
 
 def index(request):
     return render(request, "index.html")
