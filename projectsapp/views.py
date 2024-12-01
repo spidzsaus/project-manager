@@ -1,20 +1,18 @@
 from uuid import UUID
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 from projectsapp.repo import Repo
 from projectsapp.entities.users import User
 from projectsapp.entities.projects import Project
+from projectsapp.entities.tasks import Task
 
+from projectsapp.forms import CreateProjectForm
 
-def home(request):
-    return render(request, "home.html")
-
-
-def index(request):
+def mock_authenticate():
     """
-    Тестовая страница, которая выводит карточки со всеми проектами, частью которых является
-    тестовый пользователь.
+    Фейковая функция аутентификации, возвращает всегда пользователя с ID 00000000-0000-0000-0000-000000000000
+    и создаёт его, если такой не найден.
     """
 
     repo = Repo()  # Создание объекта класса Repo для доступа к БД
@@ -26,8 +24,6 @@ def index(request):
         test_id
     )  # Получение тестового пользователя из базы данных
 
-    # Если тестового пользователя нет в базе данных, то создаем его,
-    # а так же создаём первый тестовый проект (чисто для теста :P)
     if not test_user:
         # Создание нового оъекта класса User.
         test_user = User(id=test_id, name="test_user", repo=Repo())
@@ -35,19 +31,48 @@ def index(request):
         # Сохранение нового пользователя в базе данных
         repo.insert_user(test_user)
 
-        # Создание нового объекта класса Project
-        test_project = Project(id=test_id, name="test_project", repo=Repo())
+    return test_user
 
-        # Сохранение нового проекта в базе данных
-        repo.insert_project(test_project)
+def home(request):
+    return render(request, "home.html")
 
-        # Добавление пользователя в проект
-        repo.add_user_to_project(test_user, test_project)
+def create_project(request):
+    user = mock_authenticate()
+
+    if request.method == "POST":
+        form = CreateProjectForm(request.POST)
+        
+        if form.is_valid():
+            name = form.cleaned_data["name"]
+
+            repo = Repo() 
+            project = Project(name=name, repo=Repo())
+            repo.insert_project(project)
+
+            project.add_owner(user)
+
+            return redirect("projectsapp:projects")
+    else:
+        form = CreateProjectForm()
+            
+
+    return render(request, "create_project.html", {"form": form})
+
+def projects(request):
+    """
+    Тестовая страница, которая выводит карточки со всеми проектами, частью которых является
+    пользователь.
+    """
+
+    user = mock_authenticate()
 
     # Получение всех проектов, в которых участвует тестовый пользователь
-    projects_list = test_user.get_projects()
+    projects_list = user.get_projects()
 
     # Возвращаем страницу с карточками проектов.
     # Страница генерируется на основе шаблона test.html
     # с подстановкой списка проектов в параметр projects_list
     return render(request, "test.html", {"projects_list": projects_list})
+
+def index(request):
+    return render(request, "index.html")

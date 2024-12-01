@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
-from dataclasses import dataclass
-from uuid import UUID
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 
@@ -22,9 +22,10 @@ class User(IDComparable):
     :param repo: репозиторий
     """
 
-    id: UUID
     name: str
     repo: Repo
+
+    id: UUID = field(default_factory=uuid4)
 
     def get_projects(self) -> Iterable[Project]:
         """

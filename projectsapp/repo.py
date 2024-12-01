@@ -178,6 +178,44 @@ class Repo:
         )
         membership.save()
 
+    def add_owner_to_project(self, user: User, project: Project):
+        """
+        Добавляет владельца проекта в проект.
+        То же самое, что и add_user_to_project, но пользователь сразу
+        получает права администратора.
+
+        :param user: владелец проекта
+        :param project: проект, в котором будет добавлен владелец
+        """
+
+        user_model = UserModel.objects.filter(id=user.id).first()
+        project_model = ProjectModel.objects.filter(id=project.id).first()
+
+        if not user_model or not project_model:
+            return
+
+        membership = MembershipModel(
+            user=user_model, project=project_model, is_admin=True
+        )
+        membership.save()
+
+    def promote_user_in_project(self, user: User, project: Project):
+        """
+        Повышает права пользователя в проекте.
+
+        :param user: пользователь, которого нужно повысить
+        :param project: проект, в котором нужно повысить пользователя
+        """
+
+        membership = MembershipModel.objects.filter(
+            user__id=user.id, project__id=project.id
+        ).first()
+        if membership is None:
+            return
+        membership.is_admin = True
+        membership.save()
+
+
     def remove_user_from_project(self, user: User, project: Project):
         """
         Удаляет пользователя из проекта.

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
-from dataclasses import dataclass
-from uuid import UUID
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 
@@ -22,9 +22,9 @@ class Project(IDComparable):
     :param repo: репозиторий
     """
 
-    id: UUID
     name: str
     repo: Repo
+    id: UUID = field(default_factory=uuid4)
 
     def get_tasks(self) -> Iterable[Task]:
         """
@@ -50,3 +50,23 @@ class Project(IDComparable):
         """
 
         return self.repo.add_user_to_project(user, self)
+
+    def promote_user(self, user: User):
+        """
+        Повышает пользователя в роли администратора в проекте.
+        Если пользователь не состоит в проекте, то ничего не делает.
+        :param user: пользователь
+        :return: пользователь
+        """
+
+        return self.repo.promote_user_in_project(user, self)
+    
+    def add_owner(self, user: User):
+        """
+        Добавляет владельца проекта в проект.
+        То же самое, что и add_user, но пользователь сразу
+        получает права администратора.
+        :param user: владелец проекта
+        """
+
+        return self.repo.add_owner_to_project(user, self)

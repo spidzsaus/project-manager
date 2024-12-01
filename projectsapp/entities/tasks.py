@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
-from dataclasses import dataclass
-from uuid import UUID
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
 from enum import Enum
 from datetime import datetime
 
@@ -35,13 +35,14 @@ class Task(IDComparable):
         IN_PROCESS = 1
         DONE = 2
 
-    id: UUID
     name: str
     parent_project: Project
     status: Status
     end_date: datetime
 
     repo: Repo
+
+    id: UUID = field(default_factory=uuid4)
 
     def get_users(self) -> Iterable[User]:
         """
