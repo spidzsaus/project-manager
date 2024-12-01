@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from projectsapp.repo import Repo
     from projectsapp.entities.projects import Project
     from projectsapp.entities.users import User
+    from projectsapp.entities.visitors import Visitor
 
 
 @dataclass(eq=False)
@@ -37,11 +38,12 @@ class Task(IDComparable):
 
     name: str
     parent_project: Project
-    status: Status
+    
     end_date: datetime
 
     repo: Repo
 
+    status: Status = Status.TODO
     id: UUID = field(default_factory=uuid4)
 
     def get_users(self) -> Iterable[User]:
@@ -70,3 +72,6 @@ class Task(IDComparable):
         """
 
         return self.repo.unassign_user_from_task(user, self)
+
+    def accept_visitor(self, visitor: Visitor):
+        return visitor.visit_task(self)

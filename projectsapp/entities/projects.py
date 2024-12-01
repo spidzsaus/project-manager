@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from projectsapp.repo import Repo
     from projectsapp.entities.tasks import Task
     from projectsapp.entities.users import User
-
+    from projectsapp.entities.visitors import Visitor
 
 @dataclass(eq=False)
 class Project(IDComparable):
@@ -70,3 +70,6 @@ class Project(IDComparable):
         """
 
         return self.repo.add_owner_to_project(user, self)
+
+    def accept_visitor(self, visitor: Visitor) -> None:
+        return visitor.visit_project(self)

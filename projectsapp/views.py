@@ -6,8 +6,9 @@ from projectsapp.repo import Repo
 from projectsapp.entities.users import User
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
+from projectsapp.entities.visitors import ChoicesVisitor
 
-from projectsapp.forms import CreateProjectForm
+from projectsapp.forms import CreateProjectForm, CreateTaskForm
 
 def mock_authenticate():
     """
@@ -57,6 +58,39 @@ def create_project(request):
             
 
     return render(request, "create_project.html", {"form": form})
+
+def create_task(request, project_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    users_choices = map(lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users())
+
+    if request.method == "POST":
+        form = CreateTaskForm(users_choices, request.POST)
+        
+        if form.is_valid():
+            name = form.cleaned_data["name"]
+            end_date = form.cleaned_data["end_date"]
+
+            task = Task(name=name, end_date=end_date, parent_project=project, repo=repo)
+            repo.insert_task(task)
+
+            task.assign_user(user)
+            
+
+            return redirect("projectsapp:project", project_id=project_id)
+    else:
+        form = CreateTaskForm(users=users_choices) # todo: pagination
+
+    return render(request, "create_task.html", {"form": form})
+
+def project(request, project_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    return render(request, "project.html", {"project": project})
 
 def projects(request):
     """

@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from projectsapp.repo import Repo
     from projectsapp.entities.tasks import Task
     from projectsapp.entities.projects import Project
+    from projectsapp.entities.visitors import Visitor
 
 
 @dataclass(eq=False)
@@ -44,3 +45,6 @@ class User(IDComparable):
         """
 
         return self.repo.get_tasks_for_user(self, project=project)
+
+    def accept_visitor(self, visitor: Visitor) -> None:
+        return visitor.visit_user(self)
