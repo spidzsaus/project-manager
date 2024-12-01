@@ -46,5 +46,8 @@ class User(IDComparable):
 
         return self.repo.get_tasks_for_user(self, project=project)
 
+    def is_admin_in_project(self, project: Project) -> bool:
+        return self.repo.is_user_admin_in_project(self, project)
+
     def accept_visitor(self, visitor: Visitor) -> None:
         return visitor.visit_user(self)

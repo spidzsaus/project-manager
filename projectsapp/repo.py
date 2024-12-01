@@ -145,7 +145,9 @@ class Repo:
         :return: пользователи
         """
 
-        res = UserModel.objects.filter(membershipmodel__project__id=project.id)
+        res = UserModel.objects.filter(membershipmodel__project__id=project.id).order_by(
+            "membershipmodel__is_admin"
+        )
         return (model.as_entity(self) for model in res)
 
     def get_users_for_task(self, task: TaskModel):
@@ -304,3 +306,9 @@ class Repo:
         user_model.name = user.name
         # ...
         user_model.save()
+
+    def is_user_admin_in_project(self, user: User, project: Project) -> bool:
+        membership = MembershipModel.objects.filter(
+            user__id=user.id, project__id=project.id
+        ).first()
+        return membership and membership.is_admin

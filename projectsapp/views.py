@@ -90,7 +90,9 @@ def project(request, project_id: UUID):
     repo = Repo()
     project = repo.get_project_by_id(project_id)
 
-    return render(request, "project.html", {"project": project})
+    if user.is_admin_in_project(project):
+        return render(request, "project_for_admin.html", {"project": project, "my_tasks": user.get_tasks(project)})
+    return render(request, "project.html", {"project": project, "my_tasks": user.get_tasks(project)})
 
 def projects(request):
     """

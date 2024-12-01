@@ -17,6 +17,13 @@
       <li>{{ task.name }} - {{ task.status }}</li>
     {% endfor %}
   </ul>
+  <p><strong>Tasks:</strong></p>
+  <ul>
+    {% for task in project.get_tasks %}
+      <li>{{ task.name }} - {{ task.status }}</li>
+    {% endfor %}
+  </ul>
 </div>
+<a href="create_task/" class="btn btn-primary">Create task</a>
 {% endblock content %}
 
