@@ -112,3 +112,13 @@ def projects(request):
 
 def index(request):
     return render(request, "index.html")
+
+def change_task_status(request, project_id: UUID, task_id: UUID):
+    repo = Repo()
+    task = repo.get_task_by_id(task_id)
+
+    if request.method == "POST":
+        status = Task.Status(int(request.POST["status"]))
+        task.change_status(status)
+
+    return redirect("projectsapp:project", project_id=project_id)

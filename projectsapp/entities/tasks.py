@@ -36,6 +36,7 @@ class Task(IDComparable):
         IN_PROCESS = 1
         DONE = 2
 
+
     name: str
     parent_project: Project
     
@@ -72,6 +73,16 @@ class Task(IDComparable):
         """
 
         return self.repo.unassign_user_from_task(user, self)
+
+    def change_status(self, status: Status):
+        """
+        Изменяет статус задачи.
+
+        :param status: статус
+        """
+
+        self.status = status
+        self.repo.update_task(self)
 
     def accept_visitor(self, visitor: Visitor):
         return visitor.visit_task(self)
