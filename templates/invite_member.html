@@ -1,0 +1,27 @@
+<style>
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        width: 100%;
+        font-weight: bold;
+    }
+
+    .date-select {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .form-submit-btn {
+        width: 100%;
+    }
+</style>
+
+<div style="padding: 1rem;">
+    <form action="{% url 'projectsapp:invite_user' project_id=project.id %}" method="post">
+        {% csrf_token %}
+        {{ invite_user_form }}
+        <input type="submit" class="btn btn-primary" value="Invite">
+    </form>
+</div>

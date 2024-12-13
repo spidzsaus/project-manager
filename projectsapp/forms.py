@@ -31,3 +31,13 @@ class CreateTaskForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["users"].choices = users
 
+
+class InviteUserForm(forms.Form):
+    name = forms.CharField(
+        label="User name",
+        max_length=100,
+        widget=forms.TextInput(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

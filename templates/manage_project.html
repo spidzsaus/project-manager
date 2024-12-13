@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<a href="/projects/{{ project.id }}" class="btn btn-default">←</a>
+<div class="project-info">
+  {% include "project_header.html" %}
+  <ul class="nav nav-tabs" id="myTab" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="admin-tasks-tab" data-bs-toggle="tab" data-bs-target="#admin-tasks" type="button" role="tab" aria-controls="admin-tasks" aria-selected="true">
+        Manage tasks
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="admin-members-tab" data-bs-toggle="tab" data-bs-target="#admin-members" type="button" role="tab" aria-controls="admin-members" aria-selected="false">
+        Manage members
+      </button>
+    </li>
+
+  </ul>
+  <div class="tab-content" id="myTabContent">
+    <div class="tab-pane fade show active" id="admin-tasks" role="tabpanel" aria-labelledby="admin-tasks-tab">
+      {% include "manage_tasks.html" %}
+    </div>
+    <div class="tab-pane fade" id="admin-members" role="tabpanel" aria-labelledby="admin-members-tab">
+      {% include "manage_members.html" %}
+    </div>
+  </div>
+</div>
+{% endblock content %}
+

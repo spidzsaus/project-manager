@@ -1,0 +1,26 @@
+
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inviteModal">
+    Invite member
+  </button>
+
+<!-- Modal -->
+<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="inviteModalLabel">Invite member</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% include "invite_member.html" %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<p><strong>Members:</strong></p>
+      <ul>
+        {% for member in project.get_users %}
+          <li>{{ member.name }} ({{ member.email }})</li>
+        {% endfor %}
+      </ul>

@@ -1,3 +1,4 @@
+{% if has_tasks %}
 <table class="table table-striped">
   <thead>
     <tr>
@@ -25,3 +26,7 @@
     {% endfor %}
   </tbody>
 </table>
+{% else %}
+<p>You have no tasks assigned</p>
+{% endif %}
+

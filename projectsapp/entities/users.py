@@ -52,3 +52,7 @@ class User(IDComparable):
 
     def accept_visitor(self, visitor: Visitor) -> None:
         return visitor.visit_user(self)
+    
+    @property
+    def is_authenticated(self) -> bool:
+        return True # TODO

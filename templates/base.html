@@ -14,12 +14,35 @@
 
         main {
             min-height: calc(100vh - 6.5rem);
+            {% if not no_fade %}
+            animation: fade-in 0.5s ease-in-out;
+            {% endif %}
         }
 
         .nav-link {
             color: #212529 !important;
         }
+
+        @keyframes fade-in {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
     </style>
+    <script>
+        // polyfill for smooth scrolling
+        window.scroll = window.scroll || function(x, y) {
+            window.scrollTo({
+                top: y,
+                left: x,
+                behavior: 'smooth'
+            });
+        };
+    </script>
 </head>
 
 <body>
@@ -49,4 +72,5 @@
 </body>
 
 </html>
+
 

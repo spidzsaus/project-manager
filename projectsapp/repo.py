@@ -78,6 +78,17 @@ class Repo:
 
         res = UserModel.objects.filter(id=id).first()
         return res and res.as_entity(self)
+    
+    def get_user_by_name(self, name: str) -> User | None:
+        """
+        Возвращает пользователя по его имени или None, если такого пользователя нет.
+
+        :param name: имя пользователя
+        :return: пользователь или None
+        """
+
+        res = UserModel.objects.filter(name=name).first()
+        return res and res.as_entity(self)
 
     def get_project_by_id(self, id: UUID) -> Project | None:
         """

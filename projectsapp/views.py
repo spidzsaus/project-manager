@@ -1,7 +1,8 @@
 from uuid import UUID
 
 from django.shortcuts import render, redirect
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse, HttpResponseNotFound
+from django.urls import reverse
 
 from projectsapp.repo import Repo
 from projectsapp.entities.users import User
@@ -9,7 +10,7 @@ from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.visitors import ChoicesVisitor
 
-from projectsapp.forms import CreateProjectForm, CreateTaskForm
+from projectsapp.forms import CreateProjectForm, CreateTaskForm, InviteUserForm
 
 def mock_authenticate():
     """
@@ -78,13 +79,31 @@ def create_task(request, project_id: UUID):
             repo.insert_task(task)
 
             task.assign_user(user)
-
-
-            return redirect("projectsapp:project", project_id=project_id)
+            
     else:
         form = CreateTaskForm(users=users_choices) # todo: pagination
 
-    return redirect("projectsapp:project", project_id=project_id)
+    return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
+
+def invite_user(request, project_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    if request.method == "POST":
+        form = InviteUserForm(request.POST)
+        
+        if form.is_valid():
+            name = form.cleaned_data["name"]
+
+            repo = Repo()
+            user = repo.get_user_by_name(name)
+            if not user:
+                return HttpResponseNotFound("User not found")
+            
+            project.add_user(user)
+
+    return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
 
 def create_task_form(project_id: UUID) -> CreateTaskForm:
     user = mock_authenticate()
@@ -95,18 +114,54 @@ def create_task_form(project_id: UUID) -> CreateTaskForm:
 
     return CreateTaskForm(users_choices)
 
-def project(request, project_id: UUID):
+def invite_user_form(project_id: UUID) -> InviteUserForm:
     user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
 
-    if user.is_admin_in_project(project):
-        return render(request, "project_for_admin.html", 
-                      {"project": project, 
-                       "my_tasks": user.get_tasks(project),
-                       "create_task_form": create_task_form(project_id)}
-                       )
-    return render(request, "project.html", {"project": project, "my_tasks": user.get_tasks(project)})
+    return InviteUserForm()
+
+def project(request, project_id: UUID):
+    no_fade = request.GET.get("no_fade") == "True"
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    is_admin = user.is_admin_in_project(project)
+
+    return render(
+        request,
+        "project.html",
+        {
+            "project": project,
+            "my_tasks": user.get_tasks(project),
+            "has_tasks": bool(user.get_tasks(project)),
+            "no_fade": no_fade,
+            "is_admin": is_admin,
+            "user": user
+        },
+    )
+
+
+def manage_project(request, project_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    no_fade = request.GET.get("no_fade") == "True"
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    return render(
+        request,
+        "manage_project.html",
+        {
+            "project": project, 
+            "create_task_form": create_task_form(project_id), 
+            "no_fade": no_fade,
+            "invite_user_form": invite_user_form(project_id),
+        },
+    )
 
 def projects(request):
     """
@@ -135,7 +190,7 @@ def change_task_status(request, project_id: UUID, task_id: UUID):
         status = Task.Status(int(request.POST["status"]))
         task.change_status(status)
 
-    return redirect("projectsapp:project", project_id=project_id)
+    return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
 
 def delete_task(request, project_id: UUID, task_id: UUID):
     repo = Repo()
@@ -149,4 +204,4 @@ def delete_task(request, project_id: UUID, task_id: UUID):
     if request.method == "POST":
         repo.delete_task(task)
 
-    return redirect("projectsapp:project", project_id=project_id)
+    return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
