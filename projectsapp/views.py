@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from django.shortcuts import render, redirect
+from django.http import HttpResponseForbidden
 
 from projectsapp.repo import Repo
 from projectsapp.entities.users import User
@@ -83,7 +84,16 @@ def create_task(request, project_id: UUID):
     else:
         form = CreateTaskForm(users=users_choices) # todo: pagination
 
-    return render(request, "create_task.html", {"form": form, "project": project})
+    return redirect("projectsapp:project", project_id=project_id)
+
+def create_task_form(project_id: UUID) -> CreateTaskForm:
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    users_choices = map(lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users())
+
+    return CreateTaskForm(users_choices)
 
 def project(request, project_id: UUID):
     user = mock_authenticate()
@@ -91,7 +101,11 @@ def project(request, project_id: UUID):
     project = repo.get_project_by_id(project_id)
 
     if user.is_admin_in_project(project):
-        return render(request, "project_for_admin.html", {"project": project, "my_tasks": user.get_tasks(project)})
+        return render(request, "project_for_admin.html", 
+                      {"project": project, 
+                       "my_tasks": user.get_tasks(project),
+                       "create_task_form": create_task_form(project_id)}
+                       )
     return render(request, "project.html", {"project": project, "my_tasks": user.get_tasks(project)})
 
 def projects(request):
@@ -120,5 +134,19 @@ def change_task_status(request, project_id: UUID, task_id: UUID):
     if request.method == "POST":
         status = Task.Status(int(request.POST["status"]))
         task.change_status(status)
+
+    return redirect("projectsapp:project", project_id=project_id)
+
+def delete_task(request, project_id: UUID, task_id: UUID):
+    repo = Repo()
+    task = repo.get_task_by_id(task_id)
+
+    user = mock_authenticate()
+
+    if not user.is_admin_in_project(task.parent_project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    if request.method == "POST":
+        repo.delete_task(task)
 
     return redirect("projectsapp:project", project_id=project_id)

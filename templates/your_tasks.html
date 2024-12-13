@@ -1,0 +1,27 @@
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Task</th>
+      <th>End date</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in my_tasks %}
+      <tr>
+        <td>{{ task.name }}</td>
+        <td>{{ task.end_date }}</td>
+        <td>
+          <form action="{% url 'projectsapp:change_task_status' project.id task.id %}" method="post">
+            {% csrf_token %}
+            <select name="status" onchange="this.form.submit()">
+              <option value="0" {% if task.status.value == 0 %}selected{% endif %}>Not started</option>
+              <option value="1" {% if task.status.value == 1 %}selected{% endif %}>In process</option>
+              <option value="2" {% if task.status.value == 2 %}selected{% endif %}>Done</option>
+            </select>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

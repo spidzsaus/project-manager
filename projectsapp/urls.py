@@ -13,4 +13,5 @@ urlpatterns = [
   #Todo  path("projects/<str:project_id>/tasks/<str:task_id>/", views.task, name="task"),
     path("projects/<uuid:project_id>/", views.project, name="project"),
     path("change_task_status/<uuid:project_id>/<uuid:task_id>/", views.change_task_status, name="change_task_status"),
+    path("delete_task/<uuid:project_id>/<uuid:task_id>/", views.delete_task, name="delete_task"),
 ]

@@ -312,3 +312,22 @@ class Repo:
             user__id=user.id, project__id=project.id
         ).first()
         return membership and membership.is_admin
+    
+    def delete_project(self, project: Project):
+        project_model = ProjectModel.objects.filter(id=project.id).first()
+        if not project_model:
+            return
+        project_model.delete()
+
+    def delete_task(self, task: Task):
+        task_model = TaskModel.objects.filter(id=task.id).first()
+        if not task_model:
+            return
+        task_model.delete()
+
+    def delete_user(self, user: User):
+        user_model = UserModel.objects.filter(id=user.id).first()
+        if not user_model:    
+            return
+        user_model.delete()
+    
