@@ -16,4 +16,6 @@ urlpatterns = [
     path("delete_task/<uuid:project_id>/<uuid:task_id>/", views.delete_task, name="delete_task"),
     path("manage_project/<uuid:project_id>/", views.manage_project, name="manage_project"),
     path("invite_user/<uuid:project_id>/", views.invite_user, name="invite_user"),
+    path("delete_project/<uuid:project_id>/", views.delete_project, name="delete_project"),
+
 ]

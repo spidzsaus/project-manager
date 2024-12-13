@@ -205,3 +205,17 @@ def delete_task(request, project_id: UUID, task_id: UUID):
         repo.delete_task(task)
 
     return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
+
+def delete_project(request, project_id: UUID):
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    user = mock_authenticate()
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    if request.method == "POST":
+        repo.delete_project(project)
+
+    return redirect("projectsapp:projects")
