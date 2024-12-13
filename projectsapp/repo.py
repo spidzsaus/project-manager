@@ -101,18 +101,21 @@ class Repo:
         res = TaskModel.objects.filter(id=id).first()
         return res and res.as_entity(self)
 
-    def get_tasks_for_user(self, user: User, project: Project):
+    def get_tasks_for_user(self, user: User, project: Project, sort_by_status: bool = False):
         """
         Возвращает задачи, которые назначены пользователю в рамках конкретного проекта.
 
         :param user: пользователь
         :param project: проект
+        :param sort_by_status: сортировать ли задачи по статусу (опционально)
         :return: задачи
         """
 
         res = TaskModel.objects.filter(
             taskassignmentmodel__user__id=user.id, parent_project__id=project.id
         )
+        if sort_by_status:
+            res = res.order_by("status")
         return (model.as_entity(self) for model in res)
 
     def get_tasks_for_project(self, project: Project):

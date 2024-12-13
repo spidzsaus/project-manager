@@ -36,15 +36,16 @@ class User(IDComparable):
 
         return self.repo.get_projects_for_user(self)
 
-    def get_tasks(self, project: Project = None) -> Iterable[Task]:
+    def get_tasks(self, project: Project = None, sort_by_status: bool = False) -> Iterable[Task]:
         """
         Возвращает задачи, которые назначены данному пользователю.
 
         :param project: проект, в рамках которого нужно получить задачи (опционально)
+        :param sort_by_status: сортировать ли задачи по статусу (опционально)
         :return: задачи
         """
 
-        return self.repo.get_tasks_for_user(self, project=project)
+        return self.repo.get_tasks_for_user(self, project=project, sort_by_status=sort_by_status)
 
     def is_admin_in_project(self, project: Project) -> bool:
         return self.repo.is_user_admin_in_project(self, project)
