@@ -8,11 +8,13 @@ from projectsapp.models import (
     TaskModel,
     ProjectModel,
     MembershipModel,
+    JournalRecordModel,
 )
 
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
+from projectsapp.entities.records import JournalRecord
 
 # Docstrings and code comments are in Russian.
 # Докстринги и комментарии на русском
@@ -67,6 +69,25 @@ class Repo:
         )
         task_model.save()
         return task_model.as_entity(self)
+    
+    def insert_journal_record(self, record: JournalRecord) -> JournalRecord:
+        """
+        Добавляет запись в журнал в репозиторий.
+
+        :param record: запись в журнал, которая будет добавлена
+        :return: добавленная запись в журнал
+        """
+
+        record_model = JournalRecordModel(
+            id=record.id,
+            user=record.user and UserModel.objects.get(id=record.user.id),
+            task=record.task and TaskModel.objects.get(id=record.task.id),
+            project=record.project and ProjectModel.objects.get(id=record.project.id),
+            date=record.date,
+            event_type=record.event_type.value,
+        )
+        record_model.save()
+        return record_model.as_entity(self)
 
     def get_user_by_id(self, id: UUID) -> User | None:
         """
@@ -174,6 +195,50 @@ class Repo:
 
         res = UserModel.objects.filter(taskassignmentmodel__task__id=task.id)
         return (model.as_entity(self) for model in res)
+
+    def get_journal_records_for_task(self, task: TaskModel):
+        """
+        Возвращает записи журнала для задачи.
+
+        :param task: задача
+        :return: записи журнала
+        """
+
+        res = JournalRecordModel.objects.filter(task__id=task.id)
+        return (model.as_entity(self) for model in res)
+    
+    def get_journal_records_for_user(self, user: UserModel):
+        """
+        Возвращает записи журнала для пользователя.
+
+        :param user: пользователь
+        :return: записи журнала
+        """
+
+        res = JournalRecordModel.objects.filter(user__id=user.id)
+        return (model.as_entity(self) for model in res)
+
+    def get_journal_records_for_project(self, project: ProjectModel):
+        """
+        Возвращает записи журнала для проекта.
+
+        :param project: проект
+        :return: записи журнала
+        """
+
+        res = JournalRecordModel.objects.filter(task__parent_project__id=project.id)
+        return (model.as_entity(self) for model in res)
+    
+    def get_journal_record_by_id(self, id: UUID) -> JournalRecord | None:
+        """
+        Возвращает запись журнала по ее id или None, если такой записи нет.
+
+        :param id: id записи журнала
+        :return: запись журнала или None
+        """ 
+
+        res = JournalRecordModel.objects.filter(id=id).first()
+        return res and res.as_entity(self)
 
     def add_user_to_project(self, user: User, project: Project):
         """
@@ -344,4 +409,5 @@ class Repo:
         if not user_model:    
             return
         user_model.delete()
+    
     

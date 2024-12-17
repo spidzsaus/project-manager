@@ -160,6 +160,7 @@ def manage_project(request, project_id: UUID):
             "create_task_form": create_task_form(project_id), 
             "no_fade": no_fade,
             "invite_user_form": invite_user_form(project_id),
+            "records": project.get_journal_records()
         },
     )
 

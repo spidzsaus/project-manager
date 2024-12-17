@@ -7,6 +7,7 @@ from enum import Enum
 from datetime import datetime
 
 from projectsapp.entities import IDComparable
+from projectsapp.entities.records import JournalRecord
 
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
@@ -56,30 +57,56 @@ class Task(IDComparable):
 
         return self.repo.get_users_for_task(self)
 
-    def assign_user(self, user: User):
+    def assign_user(self, user: User, do_not_record: bool = False):
         """
         Назначает задачу пользователю.
 
         :param user: пользователь
+        :param do_not_record: не записывать в журнал
         """
+
+        if not do_not_record:
+            record = JournalRecord(user=user, task=self, project=self.parent_project, event_type=JournalRecord.EventType.ASSIGN_TASK_TO_USER, repo=self.repo)
+            self.repo.insert_journal_record(record)
 
         return self.repo.assign_task_to_user(user, self)
 
-    def unassign_user(self, user: User):
+    def unassign_user(self, user: User, do_not_record: bool = False):
         """
         Удаляет назначение задачи пользователю.
 
         :param user: пользователь
+        :param do_not_record: не записывать в журнал
         """
+
+        if not do_not_record:
+            record = JournalRecord(user=user, task=self, project=self.parent_project, event_type=JournalRecord.EventType.UNASSIGN_TASK_FROM_USER, repo=self.repo)
+            self.repo.insert_journal_record(record)
 
         return self.repo.unassign_user_from_task(user, self)
 
-    def change_status(self, status: Status):
+    def change_status(self, status: Status, do_not_record: bool = False):
         """
         Изменяет статус задачи.
 
         :param status: статус
+        :param do_not_record: не записывать в журнал
         """
+
+        if status == self.status:
+            return
+
+        if not do_not_record:
+            match status:
+                case Task.Status.TODO:
+                    event_type = JournalRecord.EventType.SET_TODO
+                case Task.Status.IN_PROCESS:
+                    event_type = JournalRecord.EventType.SET_IN_PROCESS
+                case Task.Status.DONE:
+                    event_type = JournalRecord.EventType.SET_DONE
+
+            record = JournalRecord(user=None, task=self, project=self.parent_project, event_type=event_type, repo=self.repo)
+            self.repo.insert_journal_record(record)
 
         self.status = status
         self.repo.update_task(self)

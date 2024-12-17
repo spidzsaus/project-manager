@@ -7,6 +7,7 @@ from django.db import models
 from projectsapp.entities.projects import Project
 from projectsapp.entities.users import User
 from projectsapp.entities.tasks import Task
+from projectsapp.entities.records import JournalRecord
 
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
@@ -87,3 +88,36 @@ class TaskAssignmentModel(models.Model):
     ) 
     user = models.ForeignKey(UserModel, null=False, on_delete=models.CASCADE)
     task = models.ForeignKey(TaskModel, null=False, on_delete=models.CASCADE)
+
+class JournalRecordModel(models.Model):
+    id = models.UUIDField( 
+        primary_key = True, 
+        default = uuid4, 
+        editable = False
+    ) 
+    user = models.ForeignKey(UserModel, null=True, on_delete=models.SET_NULL)
+    task = models.ForeignKey(TaskModel, null=True, on_delete=models.SET_NULL)
+    project = models.ForeignKey(ProjectModel, null=True, on_delete=models.SET_NULL)
+    date = models.DateTimeField(auto_now_add=True)
+    
+    class EventType(models.IntegerChoices):
+        ASSIGN_TASK_TO_USER = 0
+        UNASSIGN_TASK_FROM_USER = 1
+        SET_IN_PROCESS = 2
+        SET_DONE = 3
+        SET_TODO = 4
+        ADD_USER_TO_PROJECT = 5
+        PROMOTE_USER_IN_PROJECT = 6
+
+    event_type = models.IntegerField(choices=EventType)
+
+    def as_entity(self, repo: Repo) -> JournalRecord:
+        return JournalRecord(
+            id=self.id,
+            user=self.user and self.user.as_entity(repo),
+            task=self.task and self.task.as_entity(repo),
+            project=self.project and self.project.as_entity(repo),
+            date=self.date,
+            event_type=JournalRecord.EventType(self.event_type),
+            repo=repo,
+        )

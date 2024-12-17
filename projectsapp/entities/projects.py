@@ -5,12 +5,14 @@ from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
+from projectsapp.entities.records import JournalRecord
 
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
     from projectsapp.entities.tasks import Task
     from projectsapp.entities.users import User
     from projectsapp.entities.visitors import Visitor
+
 
 @dataclass(eq=False)
 class Project(IDComparable):
@@ -41,17 +43,36 @@ class Project(IDComparable):
         """
 
         return self.repo.get_users_for_project(self)
+    
+    def get_journal_records(self) -> Iterable[JournalRecord]:
+        """
+        Возвращает записи журнала для данного проекта.
+        :return: записи журнала
+        """
 
-    def add_user(self, user: User):
+        return self.repo.get_journal_records_for_project(self)
+
+    def add_user(self, user: User, do_not_record: bool = False):
         """
         Добавляет пользователя в проект.
         :param user: пользователь
+        :param do_not_record: не записывать в журнал
         :return: пользователь
         """
 
+        if not do_not_record:
+            record = JournalRecord(
+                user=user,
+                task=None,
+                project=self,
+                event_type=JournalRecord.EventType.ADD_USER_TO_PROJECT,
+                repo=self.repo,
+            )
+            self.repo.insert_journal_record(record)
+
         return self.repo.add_user_to_project(user, self)
 
-    def promote_user(self, user: User):
+    def promote_user(self, user: User, do_not_record: bool = False):
         """
         Повышает пользователя в роли администратора в проекте.
         Если пользователь не состоит в проекте, то ничего не делает.
@@ -59,15 +80,43 @@ class Project(IDComparable):
         :return: пользователь
         """
 
+        if not do_not_record:
+            record = JournalRecord(
+                user=user,
+                task=None,
+                project=self,
+                event_type=JournalRecord.EventType.PROMOTE_USER_IN_PROJECT,
+                repo=self.repo,
+            )
+            self.repo.insert_journal_record(record)
+
         return self.repo.promote_user_in_project(user, self)
     
-    def add_owner(self, user: User):
+    def add_owner(self, user: User, do_not_record: bool = False):
         """
         Добавляет владельца проекта в проект.
         То же самое, что и add_user, но пользователь сразу
         получает права администратора.
         :param user: владелец проекта
         """
+
+        if not do_not_record:
+            record_1 = JournalRecord(
+                user=user,
+                task=None,
+                project=self,
+                event_type=JournalRecord.EventType.ADD_USER_TO_PROJECT,
+                repo=self.repo,
+            )
+            record_2 = JournalRecord(
+                user=user,
+                task=None,
+                project=self,
+                event_type=JournalRecord.EventType.PROMOTE_USER_IN_PROJECT,
+                repo=self.repo,
+            )
+            self.repo.insert_journal_record(record_1)
+            self.repo.insert_journal_record(record_2)
 
         return self.repo.add_owner_to_project(user, self)
 
