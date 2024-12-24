@@ -39,6 +39,7 @@ class Task(IDComparable):
 
 
     name: str
+    description: str
     parent_project: Project
     
     end_date: datetime

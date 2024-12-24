@@ -37,6 +37,7 @@ class TaskModel(models.Model):
          default = uuid4, 
          editable = False) 
     name = models.CharField(max_length=128)
+    description = models.TextField(null=True)
     parent_project = models.ForeignKey(ProjectModel, null=False, on_delete=models.CASCADE)
     status = models.IntegerField(choices=Status, default=Status.TODO)
     end_date = models.DateTimeField(null=True)
@@ -48,6 +49,7 @@ class TaskModel(models.Model):
         return Task(
             id=self.id,
             name=self.name,
+            description=self.description,
             parent_project=parent_project,
             status=Task.Status(self.status),
             end_date=self.end_date,

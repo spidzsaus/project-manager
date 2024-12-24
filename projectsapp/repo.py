@@ -62,6 +62,7 @@ class Repo:
         task_model = TaskModel(
             id=task.id,
             name=task.name,
+            description=task.description,
             status=task.status.value,
             end_date=task.end_date,
             parent_project=ProjectModel.objects.get(id=task.parent_project.id),

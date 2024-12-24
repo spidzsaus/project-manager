@@ -1,25 +1,26 @@
 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
     Create task
-  </button>
+</button>
 <table class="table table-striped">
   <thead>
     <tr>
-      
-      <th style="width: 30%;">Name</th>
+      <th style="width: 25%;">Name</th>
       <th style="width: 20%;">End date</th>
-      <th style="width: 20%;">User</th>
+      <th style="width: 15%;">User</th>
       <th style="width: 20%;">Status</th>
-      <th style="width: 10%;">Action</th>
+      <th style="width: 15%;">Description</th>
+      <th style="width: 5%;">Action</th>
     </tr>
   </thead>
   <tbody>
     {% for task in project.get_tasks %}
       <tr>
-        <td style="width: 30%;">{{ task.name }}</td>
+        <td style="width: 25%;">{{ task.name }}</td>
         <td style="width: 20%;">{{ task.end_date }}</td>
-        <td style="width: 20%;">{% for user in task.get_users %}{{ user.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+        <td style="width: 15%;">{% for user in task.get_users %}{{ user.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
         <td style="width: 20%;">{{ task.status }}</td>
-        <td style="width: 10%;">
+        <td style="width: 15%;">{{ task.description }}</td>
+        <td style="width: 5%;">
           <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ task.id }}">
             Delete
           </button>
@@ -50,7 +51,6 @@
     {% endfor %}
   </tbody>
 </table>
-
 
 <!-- Modal -->
 <div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">

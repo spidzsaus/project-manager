@@ -14,6 +14,12 @@ class CreateTaskForm(forms.Form):
         max_length=100,
         widget=forms.TextInput(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
     )
+
+    description = forms.CharField(
+        label="Task description",
+        widget=forms.Textarea(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
+    )  
+
     end_date = forms.DateField(
         label="End date",
         required=True,

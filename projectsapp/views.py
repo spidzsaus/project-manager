@@ -73,9 +73,10 @@ def create_task(request, project_id: UUID):
         
         if form.is_valid():
             name = form.cleaned_data["name"]
+            description = form.cleaned_data["description"]
             end_date = form.cleaned_data["end_date"]
 
-            task = Task(name=name, end_date=end_date, parent_project=project, repo=repo)
+            task = Task(name=name, description=description, end_date=end_date, parent_project=project, repo=repo)
             repo.insert_task(task)
 
             task.assign_user(user)
