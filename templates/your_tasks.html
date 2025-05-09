@@ -15,6 +15,8 @@
         <td>{{ task.description }}</td>
         <td>{{ task.end_date }}</td>
         <td>
+          {% with blockers=task.blocked_by %}
+          {% if not blockers %}
           <form action="{% url 'projectsapp:change_task_status' project.id task.id %}" method="post">
             {% csrf_token %}
             <select name="status" onchange="this.form.submit()">
@@ -23,6 +25,14 @@
               <option value="2" {% if task.status.value == 2 %}selected{% endif %}>Done</option>
             </select>
           </form>
+          {% else %}
+            <span class="text-danger">Blocked by:
+              {% for blocking_task in blockers %}
+                {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
+              {% endfor %}
+            </span>
+          {% endif %}
+          {% endwith %}
         </td>
       </tr>
     {% endfor %}

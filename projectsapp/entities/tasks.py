@@ -140,3 +140,10 @@ class Task(IDComparable):
 
     def add_dependency(self, dependency: Task):
         self.repo.add_task_dependency(self, dependency)
+
+    def blocked_by(self) -> Iterable[Task]:
+        blockers = set()
+        for task in self.get_dependency_tasks():
+            if task.blocked_by() or task.status != Task.Status.DONE:
+                blockers.add(task)
+        return blockers
