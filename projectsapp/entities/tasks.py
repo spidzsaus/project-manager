@@ -147,3 +147,8 @@ class Task(IDComparable):
             if task.blocked_by() or task.status != Task.Status.DONE:
                 blockers.add(task)
         return blockers
+
+    def is_complete(self, lazy=True) -> bool:
+        if lazy:
+            return self.status == Task.Status.DONE
+        return not self.blocked_by() and self.status == Task.Status.DONE

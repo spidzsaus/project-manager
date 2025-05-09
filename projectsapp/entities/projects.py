@@ -122,3 +122,13 @@ class Project(IDComparable):
 
     def accept_visitor(self, visitor: Visitor) -> None:
         return visitor.visit_project(self)
+
+    def calc_progress(self) -> float:
+        tasks = self.repo.get_tasks_for_project(self)
+        tasks_counter = complete_tasks_counter = 0
+        for t in tasks:
+            tasks_counter += 1
+            if t.is_complete():
+                complete_tasks_counter += 1
+
+        return complete_tasks_counter / tasks_counter if tasks_counter else 0.0
