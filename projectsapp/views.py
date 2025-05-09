@@ -190,9 +190,9 @@ def project(request, project_id: UUID):
         "project.html",
         {
             "project": project,
-            "complete_tasks": complete_tasks,
-            "active_tasks": active_tasks,
-            "todo_tasks": todo_tasks,
+            "complete_tasks": list(complete_tasks),
+            "active_tasks": list(active_tasks),
+            "todo_tasks": list(todo_tasks),
             "has_tasks": has_tasks,
             "no_fade": no_fade,
             "is_admin": is_admin,

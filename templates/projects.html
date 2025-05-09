@@ -1,21 +1,141 @@
+
+
+
+
 {% extends "base.html" %}
-
 {% block content %}
-  <div class="mb-4">
-    <a href="/create_project" class="btn btn-primary">New project</a>
-  </div>
-  {% for project in projects_list %}
-    <div class="card">
-      <div class="card-header">
-        <a href="/projects/{{ project.id }}" class="text-dark">
-          <span class="font-weight-bold">{{ project.name }}</span>
-        </a> &middot;
-      </div>
-      <div class="card-body">
-        project info will be here :P
-      </div>
+<div class="projects-dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1 class="page-title">Your Projects</h1>
+        <a href="/create_project" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-lg"></i> New Project
+        </a>
     </div>
-    <br />
-  {% endfor %}
-{% endblock content %}
 
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+      {% for project in projects_list %}
+      <div class="col">
+          <div class="project-card position-relative">
+              <!-- Card Content Wrapper with stretched-link -->
+              <div class="card-content-wrapper">
+                  <div class="card-header d-flex align-items-center">
+                    <i class="bi bi-kanban me-3 fs-4 text-primary"></i>
+                    <a class="text-decoration-none">
+                        <h3 class="mb-0">{{ project.name }}</h3>
+                    </a>
+                </div>
+                  
+                  <div class="card-body">
+                    <p class="text-muted mb-3">{{ project.description|default:"No description"|truncatechars:100 }}</p>
+                    
+                    <div class="project-meta">
+                        <div class="d-flex justify-content-between small mb-2">
+                            <span class="text-muted">Progress</span>
+                            <span class="text-primary">75%</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 6px;">
+                            <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="avatar-group">
+                                {% for user in project.get_users|slice:":3" %}
+                                <div class="avatar avatar-sm">
+                                    {{ user.name|slice:":1"|upper }}
+                                </div>
+                                {% endfor %}
+                                {% if project.get_users|length > 3 %}
+                                <div class="avatar avatar-sm">
+                                    +{{ project.get_users|length|add:"-3" }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary">
+                                <i class="bi bi-calendar me-1"></i>{{ project.created_at|date:"M d" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                  <a href="/projects/{{ project.id }}" class="stretched-link"></a>
+              </div>
+  
+              <!-- Card Footer with proper z-index -->
+              <div class="card-footer bg-transparent position-relative" style="z-index: 2;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge rounded-pill bg-success-subtle text-success">
+                      Active
+                  </span>
+                  <div class="dropdown">
+                      <button class="btn btn-link text-muted" type="button" 
+                              data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end">
+                          <li><a class="dropdown-item" href="#"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                          <li><a class="dropdown-item text-danger" href="#">
+                              <i class="bi bi-trash me-2"></i>Delete
+                          </a></li>
+                      </ul>
+                  </div>
+              </div>
+              </div>
+          </div>
+      </div>
+      {% endfor %}
+  </div>
+  
+  <style>
+    .projects-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .project-card {
+        height: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.08);
+        transition: all 0.2s ease;
+    }
+
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+        background: rgba(99, 102, 241, 0.05);
+        border-bottom: none;
+        padding: 1.5rem;
+    }
+
+    .avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #6366f1;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+    }
+
+    .avatar-group {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .avatar-sm {
+        width: 24px;
+        height: 24px;
+        font-size: 0.65rem;
+    }
+
+    .page-title {
+        font-weight: 700;
+        color: #1e293b;
+        letter-spacing: -0.5px;
+    }
+</style>
+{% endblock content %}

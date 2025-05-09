@@ -1,79 +1,226 @@
 {% if has_tasks %}
-  {% for task in active_tasks %}
-  <div class="card">
-    <div class="card-header">
-      <span class="font-weight-bold">{{ task.name }}</span>
-      &middot; {{task.end_date}} &middot; 
-      {% with blockers=task.blocked_by %}
-        {% if not blockers %}
-        <form action="{% url 'projectsapp:finish_task' project.id task.id %}" method="post">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-success btn-sm">Mark as Done</button>
-        </form>
-        {% else %}
-          <span class="text-danger">Blocked by:
-            {% for blocking_task in blockers %}
-              {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </span>
-        {% endif %}
-      {% endwith %}
-    </div>
-    <div class="card-body">
-      {{task.description}}
-    </div>
-  </div>
-  <br />
-  {% endfor %}
-  <hr>
-  {% for task in todo_tasks %}
-  <div class="card">
-    <div class="card-header">
-      <span class="font-weight-bold">{{ task.name }}</span>
-      &middot; {{task.end_date}} &middot;
+<style>
+    .collapse-toggle {
+        background: white;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
 
-      <form action="{% url 'projectsapp:start_task' project.id task.id %}" method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success btn-sm">Start the task</button>
-      </form>
+    .collapse-toggle:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
 
-      {% with blockers=task.blocked_by %}
-        {% if blockers %}
-          <span class="text-danger">Blocked by:
-            {% for blocking_task in blockers %}
-              {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
-            {% endfor %}
-          </span>
-        {% endif %}
-      {% endwith %}
+    .collapse-toggle::after {
+        content: '▼';
+        font-family: "bootstrap-icons";
+        font-size: 1rem;
+        transition: transform 0.3s ease;
+        order: 3; /* Position after label */
+        margin-left: 0; /* Remove auto margin */
+        font-size: 0.9rem;
+        color: #64748b; /* Match text color */
+        transition: transform 0.3s ease;
+    }
+
+    .collapse-toggle.collapsed::after {
+        transform: rotate(-90deg);
+    }
+
+    .task-status-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        order:1;
+    }
+
+    .task-card {
+        border-left: 4px solid;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+        margin-top: 0.5rem;
+    }
+
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .blocked-badge {
+        background: #fee2e2;
+        color: #dc2626;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    
+    .task-count-badge {
+      background: #e0e7ff;
+      color: #4f46e5;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      margin-left: auto; /* Add this line */
+      order: 4; /* Ensures it stays on the right */
+  }
+  .fw-semibold {
+    order: 2;
+}
+
+</style>
+
+<!-- Active Tasks -->
+<div class="mb-4">
+    <button class="collapse-toggle w-100 d-flex align-items-center" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#collapse-active" 
+            aria-expanded="true">
+        <span class="task-status-icon bg-primary text-white">
+            <i class="bi bi-play-fill"></i>
+        </span>
+        <span class="fw-semibold fs-5">Active Tasks</span>
+        <span class="task-count-badge">{{ active_tasks|length }}</span>
+    </button>
+    
+    <div class="collapse show" id="collapse-active">
+        {% for task in active_tasks %}
+        <div class="card task-card mb-3 border-primary">
+            <div class="card-header d-flex justify-content-between align-items-center bg-white">
+              <div class="d-flex align-items-center">
+                  <h5 class="mb-0 me-3">{{ task.name }}</h5>
+                  <span class="task-due-date">
+                      📅 {{ task.end_date|date:"M d, Y" }}
+                  </span>
+              </div>
+              {% with blockers=task.blocked_by %}
+                  {% if not blockers %}
+                  <form method="post" action="{% url 'projectsapp:finish_task' project.id task.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-success btn-sm d-flex align-items-center gap-2">
+                          <span>Mark Done</span>
+                          <span>✓</span>
+                      </button>
+                  </form>
+                  {% else %}
+                  <div class="blocked-badge">
+                      ⚠️ Blocked by: 
+                      {% for blocking_task in blockers %}
+                          {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
+                      {% endfor %}
+                  </div>
+                  {% endif %}
+              {% endwith %}
+          </div>
+          <div class="card-body text-secondary">
+              {{ task.description }}
+          </div>
+        </div>
+        {% endfor %}
     </div>
-    <div class="card-body">
-      {{task.description}}
+</div>
+
+<!-- Upcoming Tasks -->
+<div class="mb-4">
+    <button class="collapse-toggle w-100 d-flex align-items-center" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#collapse-upcoming" 
+            aria-expanded="true">
+        <span class="task-status-icon bg-secondary text-white">
+            <i class="bi bi-calendar-event"></i>
+        </span>
+        <span class="fw-semibold fs-5">Upcoming Tasks</span>
+        <span class="task-count-badge">{{ todo_tasks|length }}</span>
+    </button>
+    
+    <div class="collapse show" id="collapse-upcoming">
+        {% for task in todo_tasks %}
+      <div class="card task-card mb-3 border-left-secondary">
+          <div class="card-header d-flex justify-content-between align-items-center bg-white">
+              <div class="d-flex align-items-center">
+                  <h5 class="mb-0 me-3">{{ task.name }}</h5>
+                  <span class="task-due-date">
+                      📅 {{ task.end_date|date:"M d, Y" }}
+                  </span>
+              </div>
+              <div class="d-flex align-items-center gap-3">
+                  {% with blockers=task.blocked_by %}
+                      {% if blockers %}
+                      <div class="blocked-badge">
+                          ⚠️ Blocked
+                      </div>
+                      {% endif %}
+                  {% endwith %}
+                  <form method="post" action="{% url 'projectsapp:start_task' project.id task.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-primary btn-sm d-flex align-items-center gap-2">
+                          <span>Start Task</span>
+                          <span>→</span>
+                      </button>
+                  </form>
+              </div>
+          </div>
+          <div class="card-body text-secondary">
+              {{ task.description }}
+          </div>
+      </div>
+      {% endfor %}
     </div>
-  </div>
-  <br />
-  {% endfor %}
+</div>
 
-  <hr>
-
-  {% for task in complete_tasks %}
-  <div class="card">
-    <div class="card-header">
-      <span class="font-weight-bold">{{ task.name }}</span>
-      &middot; {{task.end_date}} &middot;
-      <span class="text-success">Done</span>
+<!-- Completed Tasks -->
+<div class="mb-4">
+    <button class="collapse-toggle w-100 d-flex align-items-center" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#collapse-completed" 
+            aria-expanded="false">
+        <span class="task-status-icon bg-success text-white">
+            <i class="bi bi-check2"></i>
+        </span>
+        <span class="fw-semibold fs-5">Completed Tasks</span>
+        <span class="task-count-badge">{{ complete_tasks|length }}</span>
+    </button>
+    
+    <div class="collapse" id="collapse-completed">
+        {% for task in complete_tasks %}
+      <div class="card task-card mb-3 border-left-success">
+          <div class="card-header d-flex justify-content-between align-items-center bg-white">
+              <div class="d-flex align-items-center">
+                  <h5 class="mb-0 me-3">{{ task.name }}</h5>
+                  <span class="task-due-date">
+                      📅 {{ task.end_date|date:"M d, Y" }}
+                  </span>
+              </div>
+              <span class="text-success">✅ Completed</span>
+          </div>
+          <div class="card-body text-secondary">
+              {{ task.description }}
+          </div>
+      </div>
+      {% endfor %}
     </div>
-    <div class="card-body">
-      {{task.description}}
-    </div>
-  </div>
-  <br />
-  {% endfor %}
-
-
+</div>
 
 {% else %}
-<p>You have no tasks assigned</p>
+<div class="empty-state text-center py-5">
+    <div class="mb-3">
+        <i class="bi bi-check2-all" style="font-size: 3rem; color: #cbd5e1;"></i>
+    </div>
+    <h3 class="text-slate-600 mb-2">No Tasks Assigned!</h3>
+    <p class="text-slate-400">Enjoy your free time or request new tasks from your manager</p>
+</div>
 {% endif %}
-
-

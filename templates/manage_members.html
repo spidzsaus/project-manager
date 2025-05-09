@@ -1,26 +1,75 @@
+<div class="member-management">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="mb-0">Team Members</h4>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inviteModal">
+          <i class="bi bi-person-plus"></i> Invite Member
+      </button>
+  </div>
 
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#inviteModal">
-    Invite member
-  </button>
-
-<!-- Modal -->
-<div class="modal fade" id="inviteModal" tabindex="-1" aria-labelledby="inviteModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="inviteModalLabel">Invite member</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  <div class="member-list">
+      {% for member in project.get_users %}
+      <div class="member-card">
+          <div class="member-info">
+              <div class="member-avatar">
+                  {{ member.name|slice:":1"|upper }}
+              </div>
+              <div class="member-details">
+                  <h6 class="mb-0">{{ member.name }}</h6>
+                  <small class="text-muted">{{ member.email }}</small>
+              </div>
+          </div>
+          <div class="member-actions">
+              <button class="btn btn-sm btn-outline-danger">
+                  <i class="bi bi-x-lg"></i> Remove
+              </button>
+          </div>
       </div>
-      <div class="modal-body">
-        {% include "invite_member.html" %}
-      </div>
-    </div>
+      {% endfor %}
   </div>
 </div>
 
-<p><strong>Members:</strong></p>
-      <ul>
-        {% for member in project.get_users %}
-          <li>{{ member.name }} ({{ member.email }})</li>
-        {% endfor %}
-      </ul>
+<!-- Invite Modal -->
+<div class="modal fade" id="inviteModal" tabindex="-1">
+  <div class="modal-dialog">
+      <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title"><i class="bi bi-person-plus"></i> Invite Member</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+              {% include "invite_member.html" %}
+          </div>
+      </div>
+  </div>
+</div>
+
+<style>
+  .member-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .member-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+  }
+
+  .member-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #6366f1;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+  }
+</style>

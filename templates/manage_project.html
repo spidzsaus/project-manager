@@ -1,62 +1,103 @@
 {% extends "base.html" %}
-
 {% block content %}
-<a href="/projects/{{ project.id }}" class="btn btn-default">←</a>
-<div class="project-info">
-  {% include "project_header.html" %}
-  <ul class="nav nav-tabs" id="myTab" role="tablist">
-    <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="admin-tasks-tab" data-bs-toggle="tab" data-bs-target="#admin-tasks" type="button" role="tab" aria-controls="admin-tasks" aria-selected="true">
-        Manage tasks
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="admin-members-tab" data-bs-toggle="tab" data-bs-target="#admin-members" type="button" role="tab" aria-controls="admin-members" aria-selected="false">
-        Manage members
-      </button>
-    </li>
-    <li class="nav-item" role="presentation">
-      <button class="nav-link" id="journal-tab" data-bs-toggle="tab" data-bs-target="#journal" type="button" role="tab" aria-controls="journal" aria-selected="false">
-        Journal
-      </button>
-    </li>
-  </ul>
-  <div class="tab-content" id="myTabContent">
-    <div class="tab-pane fade show active" id="admin-tasks" role="tabpanel" aria-labelledby="admin-tasks-tab">
-      {% include "manage_tasks.html" %}
+<div class="admin-panel">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/projects/{{ project.id }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Project
+        </a>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProjectModal">
+            <i class="bi bi-trash"></i> Delete Project
+        </button>
     </div>
-    <div class="tab-pane fade" id="admin-members" role="tabpanel" aria-labelledby="admin-members-tab">
-      {% include "manage_members.html" %}
-    </div>
-    <div class="tab-pane fade" id="journal" role="tabpanel" aria-labelledby="journal-tab">
-      {% include "project_journal.html" %}
-    </div>
-  </div>
-  <button type="button" class="btn btn-danger mt-3" data-bs-toggle="modal" data-bs-target="#deleteProjectModal">
-    Delete project
-  </button>
-  
-  <!-- Delete Project Modal -->
-  <div class="modal fade" id="deleteProjectModal" tabindex="-1" aria-labelledby="deleteProjectModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="deleteProjectModalLabel">Confirm Deletion</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          Are you sure you want to delete this project? This action cannot be undone.
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <form action="{% url 'projectsapp:delete_project' project.id %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger">Delete</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock content %}
 
+    <div class="admin-card">
+        {% include "project_header.html" %}
+        
+        <div class="admin-tabs">
+            <ul class="nav nav-pills mb-4" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#admin-tasks">
+                        <i class="bi bi-list-task me-2"></i>Manage Tasks
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#admin-members">
+                        <i class="bi bi-people me-2"></i>Manage Members
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#journal">
+                        <i class="bi bi-journal-text me-2"></i>Project Journal
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="admin-tasks">
+                    {% include "manage_tasks.html" %}
+                </div>
+                <div class="tab-pane fade" id="admin-members">
+                    {% include "manage_members.html" %}
+                </div>
+                <div class="tab-pane fade" id="journal">
+                    {% include "project_journal.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Project Modal -->
+    <div class="modal fade" id="deleteProjectModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="lead">Are you sure you want to permanently delete this project?</p>
+                    <p class="text-muted">This action cannot be undone and will remove all associated tasks and data.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{% url 'projectsapp:delete_project' project.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Delete Project
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-panel {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .admin-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        padding: 2rem;
+    }
+
+    .admin-tabs .nav-pills .nav-link {
+      padding: 0.75rem 1.5rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      background-color: #f1f5f9 !important;
+      color: #64748b !important;
+  }
+  
+  .admin-tabs .nav-pills .nav-link.active {
+      background-color: #1d4ed8 !important;
+      color: white !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+</style>
+{% endblock content %}

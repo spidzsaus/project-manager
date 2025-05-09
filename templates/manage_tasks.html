@@ -1,72 +1,99 @@
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
-    Create task
-</button>
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th style="width: 25%;">Name</th>
-      <th style="width: 20%;">End date</th>
-      <th style="width: 15%;">User</th>
-      <th style="width: 15%;">Depends on</th>
-      <th style="width: 20%;">Status</th>
-      <th style="width: 15%;">Description</th>
-      <th style="width: 5%;">Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for task in project.get_tasks %}
-      <tr>
-        <td style="width: 25%;">{{ task.name }}</td>
-        <td style="width: 20%;">{{ task.end_date }}</td>
-        <td style="width: 15%;">{% for user in task.get_users %}{{ user.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-        <td style="width: 15%;">{% for task in task.get_dependency_tasks %}{{ task.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-        
-        <td style="width: 20%;">{{ task.status }}</td>
-        <td style="width: 15%;">{{ task.description }}</td>
-        <td style="width: 5%;">
-          <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ task.id }}">
-            Delete
-          </button>
+<div class="task-management">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="mb-0">Task Management</h4>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+          <i class="bi bi-plus-lg"></i> Create Task
+      </button>
+  </div>
 
-          <!-- Modal -->
-          <div class="modal fade" id="deleteModal{{ task.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ task.id }}" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="deleteModalLabel{{ task.id }}">Confirm Deletion</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  Are you sure you want to delete this task?
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                  <form action="{% url 'projectsapp:delete_task' project.id task.id %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Delete</button>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<!-- Modal -->
-<div class="modal fade" id="createModal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="createModalLabel">Create task</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        {% include "create_task.html" %}
-      </div>
-    </div>
+  <div class="table-responsive">
+      <table class="table table-hover align-middle">
+          <thead class="table-light">
+              <tr>
+                  <th>Task Name</th>
+                  <th>Due Date</th>
+                  <th>Assigned To</th>
+                  <th>Dependencies</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% for task in project.get_tasks %}
+              <tr>
+                  <td>
+                      <div class="d-flex align-items-center">
+                          <i class="bi bi-card-checklist me-2 text-primary"></i>
+                          <strong>{{ task.name }}</strong>
+                      </div>
+                      <small class="text-muted">{{ task.description|truncatechars:40 }}</small>
+                  </td>
+                  <td>{{ task.end_date|date:"M d, Y" }}</td>
+                  <td>
+                      {% for user in task.get_users %}
+                      <span class="badge bg-primary-subtle text-primary mb-1">{{ user.name }}</span>
+                      {% endfor %}
+                  </td>
+                  <td>
+                      {% for dep in task.get_dependency_tasks %}
+                      <span class="badge bg-warning-subtle text-warning mb-1">{{ dep.name }}</span>
+                      {% endfor %}
+                  </td>
+                  <td>
+                      <span class="badge bg-{{ task.status|yesno:'success,secondary' }}">
+                          {{ task.status|yesno:"Active,Inactive" }}
+                      </span>
+                  </td>
+                  <td>
+                      <button class="btn btn-sm btn-danger" data-bs-toggle="modal" 
+                              data-bs-target="#deleteModal{{ task.id }}">
+                          <i class="bi bi-trash"></i>
+                      </button>
+                  </td>
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
   </div>
 </div>
 
+<!-- Modals -->
+<div class="modal fade" id="createModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title"><i class="bi bi-plus-lg"></i> Create New Task</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+              {% include "create_task.html" %}
+          </div>
+      </div>
+  </div>
+</div>
+
+{% for task in project.get_tasks %}
+<div class="modal fade" id="deleteModal{{ task.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+              <p>Are you sure you want to delete <strong>{{ task.name }}</strong>?</p>
+              <small class="text-muted">This action cannot be undone.</small>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <form action="{% url 'projectsapp:delete_task' project.id task.id %}" method="post">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger">
+                      <i class="bi bi-trash"></i> Delete Task
+                  </button>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
+{% endfor %}
