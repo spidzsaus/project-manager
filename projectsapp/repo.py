@@ -157,6 +157,37 @@ class Repo:
             res = res.order_by("status")
         return (model.as_entity(self) for model in res)
 
+    def get_tasks_for_user_grouped_by_status(
+        self, user: User, project: Project | None = None
+    ) -> dict[Task.Status, Iterable[Task]]:
+
+        def model_status_to_entity_status(status):
+            match status:
+                case TaskModel.Status.TODO:
+                    return Task.Status.TODO
+                case TaskModel.Status.IN_PROCESS:
+                    return Task.Status.IN_PROCESS
+                case TaskModel.Status.DONE:
+                    return Task.Status.DONE
+
+        tasks_by_statuses = {}
+        for status, display in TaskModel.Status.choices:
+            res = (
+                TaskModel.objects.filter(
+                    taskassignmentmodel__user__id=user.id, status=status
+                )
+                if project is None
+                else TaskModel.objects.filter(
+                    taskassignmentmodel__user__id=user.id,
+                    parent_project__id=project.id,
+                    status=status,
+                )
+            )
+            tasks_by_statuses[model_status_to_entity_status(status)] = (
+                model.as_entity(self) for model in res
+            )
+        return tasks_by_statuses
+
     def get_tasks_for_project(self, project: Project):
         """
         Возвращает задачи, которые принадлежат конкретному проекту.

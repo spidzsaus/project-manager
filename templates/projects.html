@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="mb-4">
-  <a href="/create_project" class="btn btn-primary">New project</a>
-</div>
-{% for project in projects_list %}
-  <div class="card">
-    <div class="card-header">
-      <a href="/projects/{{ project.id }}" class="text-dark">
-        <span class="font-weight-bold">{{ project.name }}</span>
-      </a> &middot;
-    </div>
-    <div class="card-body">
-      project info will be here :P
-    </div>
+  <div class="mb-4">
+    <a href="/create_project" class="btn btn-primary">New project</a>
   </div>
-  <br />
-{% endfor %}
+  {% for project in projects_list %}
+    <div class="card">
+      <div class="card-header">
+        <a href="/projects/{{ project.id }}" class="text-dark">
+          <span class="font-weight-bold">{{ project.name }}</span>
+        </a> &middot;
+      </div>
+      <div class="card-body">
+        project info will be here :P
+      </div>
+    </div>
+    <br />
+  {% endfor %}
 {% endblock content %}
 

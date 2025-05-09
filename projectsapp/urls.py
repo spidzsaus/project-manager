@@ -15,10 +15,20 @@ urlpatterns = [
     # Todo  path("projects/<str:project_id>/tasks/", views.tasks, name="tasks"),
     # Todo  path("projects/<str:project_id>/tasks/<str:task_id>/", views.task, name="task"),
     path("projects/<uuid:project_id>/", views.project, name="project"),
+    # path(
+    #    "change_task_status/<uuid:project_id>/<uuid:task_id>/",
+    #    views.change_task_status,
+    #    name="change_task_status",
+    # ),
     path(
-        "change_task_status/<uuid:project_id>/<uuid:task_id>/",
-        views.change_task_status,
-        name="change_task_status",
+        "start_task/<uuid:project_id>/<uuid:task_id>/",
+        views.start_task,
+        name="start_task",
+    ),
+    path(
+        "finish_task/<uuid:project_id>/<uuid:task_id>/",
+        views.finish_task,
+        name="finish_task",
     ),
     path(
         "delete_task/<uuid:project_id>/<uuid:task_id>/",

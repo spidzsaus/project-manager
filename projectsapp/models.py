@@ -107,11 +107,11 @@ class JournalRecordModel(models.Model):
 
     def as_entity(self, repo: Repo) -> JournalRecord:
         return JournalRecord(
-            id=self.id,
             user=self.user and self.user.as_entity(repo),
             task=self.task and self.task.as_entity(repo),
             project=self.project and self.project.as_entity(repo),
             date=self.date,
             event_type=JournalRecord.EventType(self.event_type),
             repo=repo,
+            id=self.id,
         )

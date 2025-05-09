@@ -1,43 +1,77 @@
 {% if has_tasks %}
-<table class="table table-striped">
-  <thead>
-    <tr>
-      <th>Task</th>
-      <th>Description</th>
-      <th>End date</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for task in my_tasks %}
-      <tr>
-        <td>{{ task.name }}</td>
-        <td>{{ task.description }}</td>
-        <td>{{ task.end_date }}</td>
-        <td>
-          {% with blockers=task.blocked_by %}
-          {% if not blockers %}
-          <form action="{% url 'projectsapp:change_task_status' project.id task.id %}" method="post">
-            {% csrf_token %}
-            <select name="status" onchange="this.form.submit()">
-              <option value="0" {% if task.status.value == 0 %}selected{% endif %}>Not started</option>
-              <option value="1" {% if task.status.value == 1 %}selected{% endif %}>In process</option>
-              <option value="2" {% if task.status.value == 2 %}selected{% endif %}>Done</option>
-            </select>
-          </form>
-          {% else %}
-            <span class="text-danger">Blocked by:
-              {% for blocking_task in blockers %}
-                {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
-              {% endfor %}
-            </span>
-          {% endif %}
-          {% endwith %}
-        </td>
-      </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  {% for task in active_tasks %}
+  <div class="card">
+    <div class="card-header">
+      <span class="font-weight-bold">{{ task.name }}</span>
+      &middot; {{task.end_date}} &middot; 
+      {% with blockers=task.blocked_by %}
+        {% if not blockers %}
+        <form action="{% url 'projectsapp:finish_task' project.id task.id %}" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-success btn-sm">Mark as Done</button>
+        </form>
+        {% else %}
+          <span class="text-danger">Blocked by:
+            {% for blocking_task in blockers %}
+              {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </span>
+        {% endif %}
+      {% endwith %}
+    </div>
+    <div class="card-body">
+      {{task.description}}
+    </div>
+  </div>
+  <br />
+  {% endfor %}
+  <hr>
+  {% for task in todo_tasks %}
+  <div class="card">
+    <div class="card-header">
+      <span class="font-weight-bold">{{ task.name }}</span>
+      &middot; {{task.end_date}} &middot;
+
+      <form action="{% url 'projectsapp:start_task' project.id task.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-success btn-sm">Start the task</button>
+      </form>
+
+      {% with blockers=task.blocked_by %}
+        {% if blockers %}
+          <span class="text-danger">Blocked by:
+            {% for blocking_task in blockers %}
+              {{ blocking_task.name }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </span>
+        {% endif %}
+      {% endwith %}
+    </div>
+    <div class="card-body">
+      {{task.description}}
+    </div>
+  </div>
+  <br />
+  {% endfor %}
+
+  <hr>
+
+  {% for task in complete_tasks %}
+  <div class="card">
+    <div class="card-header">
+      <span class="font-weight-bold">{{ task.name }}</span>
+      &middot; {{task.end_date}} &middot;
+      <span class="text-success">Done</span>
+    </div>
+    <div class="card-body">
+      {{task.description}}
+    </div>
+  </div>
+  <br />
+  {% endfor %}
+
+
+
 {% else %}
 <p>You have no tasks assigned</p>
 {% endif %}

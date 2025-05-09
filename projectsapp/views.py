@@ -4,6 +4,7 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
+
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
@@ -176,13 +177,23 @@ def project(request, project_id: UUID):
     assert project is not None  # todo: handle this case
     is_admin = user.is_admin_in_project(project)
 
+    tasks_by_statuses = repo.get_tasks_for_user_grouped_by_status(user, project)
+
+    complete_tasks = tasks_by_statuses.get(Task.Status.DONE, [])
+    active_tasks = tasks_by_statuses.get(Task.Status.IN_PROCESS, [])
+    todo_tasks = tasks_by_statuses.get(Task.Status.TODO, [])
+
+    has_tasks = not not (complete_tasks or active_tasks or todo_tasks)
+
     return render(
         request,
         "project.html",
         {
             "project": project,
-            "my_tasks": user.get_tasks(project),
-            "has_tasks": bool(user.get_tasks(project)),
+            "complete_tasks": complete_tasks,
+            "active_tasks": active_tasks,
+            "todo_tasks": todo_tasks,
+            "has_tasks": has_tasks,
             "no_fade": no_fade,
             "is_admin": is_admin,
             "user": user,
@@ -233,6 +244,24 @@ def projects(request):
 
 def index(request):
     return render(request, "index.html")
+
+
+def start_task(request, project_id: UUID, task_id: UUID):
+    repo = Repo()
+    task = repo.get_task_by_id(task_id)
+    assert task is not None  # todo: handle this case
+    if task.status == Task.Status.TODO:
+        task.change_status(Task.Status.IN_PROCESS)
+    return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
+
+
+def finish_task(request, project_id: UUID, task_id: UUID):
+    repo = Repo()
+    task = repo.get_task_by_id(task_id)
+    assert task is not None  # todo: handle this case
+    if task.status == Task.Status.IN_PROCESS:
+        task.change_status(Task.Status.DONE)
+    return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
 
 
 def change_task_status(request, project_id: UUID, task_id: UUID):
