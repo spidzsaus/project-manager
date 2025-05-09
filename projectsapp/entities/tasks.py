@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
 from dataclasses import dataclass, field
-from uuid import UUID, uuid4
-from enum import Enum
 from datetime import datetime
+from enum import Enum
+from typing import TYPE_CHECKING, Iterable
+from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 from projectsapp.entities.records import JournalRecord
 
 if TYPE_CHECKING:
-    from projectsapp.repo import Repo
     from projectsapp.entities.projects import Project
     from projectsapp.entities.users import User
     from projectsapp.entities.visitors import Visitor
+    from projectsapp.repo import Repo
 
 
 @dataclass(eq=False)
@@ -38,14 +38,14 @@ class Task(IDComparable):
         DONE = 2
 
     name: str
-    description: str | None
-    parent_project: Project
 
-    end_date: datetime | None
+    parent_project: Project
 
     repo: Repo
 
     status: Status = Status.TODO
+    description: str | None = None
+    end_date: datetime | None = None
     id: UUID = field(default_factory=uuid4)
 
     def get_users(self) -> Iterable[User]:

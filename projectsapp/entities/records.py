@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
-from uuid import UUID, uuid4
-from enum import Enum
 from datetime import datetime, timezone
+from enum import Enum
+from typing import TYPE_CHECKING
+from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 
 if TYPE_CHECKING:
-    from projectsapp.repo import Repo
+    from projectsapp.entities.projects import Project
     from projectsapp.entities.tasks import Task
     from projectsapp.entities.users import User
-    from projectsapp.entities.projects import Project
+    from projectsapp.repo import Repo
 
 @dataclass(eq=False)
 class JournalRecord(IDComparable):

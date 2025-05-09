@@ -4,6 +4,7 @@ from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
 
+
 class Visitor(ABC):
     @abstractmethod
     def visit_project(self, project: Project):

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Iterable
 from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 from projectsapp.entities.records import JournalRecord
 
 if TYPE_CHECKING:
-    from projectsapp.repo import Repo
     from projectsapp.entities.tasks import Task
     from projectsapp.entities.users import User
     from projectsapp.entities.visitors import Visitor
+    from projectsapp.repo import Repo
 
 
 @dataclass(eq=False)
@@ -43,7 +43,7 @@ class Project(IDComparable):
         """
 
         return self.repo.get_users_for_project(self)
-    
+
     def get_journal_records(self) -> Iterable[JournalRecord]:
         """
         Возвращает записи журнала для данного проекта.
@@ -91,7 +91,7 @@ class Project(IDComparable):
             self.repo.insert_journal_record(record)
 
         return self.repo.promote_user_in_project(user, self)
-    
+
     def add_owner(self, user: User, do_not_record: bool = False):
         """
         Добавляет владельца проекта в проект.

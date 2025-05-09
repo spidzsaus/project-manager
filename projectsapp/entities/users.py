@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Iterable
 from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 
 if TYPE_CHECKING:
-    from projectsapp.repo import Repo
-    from projectsapp.entities.tasks import Task
     from projectsapp.entities.projects import Project
+    from projectsapp.entities.tasks import Task
     from projectsapp.entities.visitors import Visitor
+    from projectsapp.repo import Repo
 
 
 @dataclass(eq=False)
@@ -36,7 +36,9 @@ class User(IDComparable):
 
         return self.repo.get_projects_for_user(self)
 
-    def get_tasks(self, project: Project = None, sort_by_status: bool = False) -> Iterable[Task]:
+    def get_tasks(
+        self, project: Project | None = None, sort_by_status: bool = False
+    ) -> Iterable[Task]:
         """
         Возвращает задачи, которые назначены данному пользователю.
 
@@ -45,14 +47,16 @@ class User(IDComparable):
         :return: задачи
         """
 
-        return self.repo.get_tasks_for_user(self, project=project, sort_by_status=sort_by_status)
+        return self.repo.get_tasks_for_user(
+            self, project=project, sort_by_status=sort_by_status
+        )
 
     def is_admin_in_project(self, project: Project) -> bool:
         return self.repo.is_user_admin_in_project(self, project)
 
     def accept_visitor(self, visitor: Visitor) -> None:
         return visitor.visit_user(self)
-    
+
     @property
     def is_authenticated(self) -> bool:
-        return True # TODO
+        return True  # TODO

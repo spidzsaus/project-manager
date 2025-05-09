@@ -1,16 +1,15 @@
 from uuid import UUID
 
-from django.shortcuts import render, redirect
-from django.http import HttpResponseForbidden, HttpResponse, HttpResponseNotFound
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
+from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from projectsapp.repo import Repo
-from projectsapp.entities.users import User
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
+from projectsapp.entities.users import User
 from projectsapp.entities.visitors import ChoicesVisitor
-
 from projectsapp.forms import CreateProjectForm, CreateTaskForm, InviteUserForm
+from projectsapp.repo import Repo
 
 
 def mock_authenticate():

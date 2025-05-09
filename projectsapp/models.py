@@ -1,13 +1,14 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from django.db import models
 
 from projectsapp.entities.projects import Project
-from projectsapp.entities.users import User
-from projectsapp.entities.tasks import Task
 from projectsapp.entities.records import JournalRecord
+from projectsapp.entities.tasks import Task
+from projectsapp.entities.users import User
 
 if TYPE_CHECKING:
     from projectsapp.repo import Repo

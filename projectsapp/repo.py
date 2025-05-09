@@ -1,21 +1,20 @@
+from datetime import datetime
 from typing import Callable, Iterable
 from uuid import UUID
-from datetime import datetime
-
-from projectsapp.models import (
-    UserModel,
-    TaskAssignmentModel,
-    TaskModel,
-    ProjectModel,
-    MembershipModel,
-    JournalRecordModel,
-    TaskDependencyModel,
-)
 
 from projectsapp.entities.projects import Project
+from projectsapp.entities.records import JournalRecord
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
-from projectsapp.entities.records import JournalRecord
+from projectsapp.models import (
+    JournalRecordModel,
+    MembershipModel,
+    ProjectModel,
+    TaskAssignmentModel,
+    TaskDependencyModel,
+    TaskModel,
+    UserModel,
+)
 
 # Docstrings and code comments are in Russian.
 # Докстринги и комментарии на русском
@@ -136,7 +135,7 @@ class Repo:
         return res and res.as_entity(self)
 
     def get_tasks_for_user(
-        self, user: User, project: Project, sort_by_status: bool = False
+        self, user: User, project: Project | None = None, sort_by_status: bool = False
     ):
         """
         Возвращает задачи, которые назначены пользователю в рамках конкретного проекта.
@@ -147,8 +146,12 @@ class Repo:
         :return: задачи
         """
 
-        res = TaskModel.objects.filter(
-            taskassignmentmodel__user__id=user.id, parent_project__id=project.id
+        res = (
+            TaskModel.objects.filter(taskassignmentmodel__user__id=user.id)
+            if project is None
+            else TaskModel.objects.filter(
+                taskassignmentmodel__user__id=user.id, parent_project__id=project.id
+            )
         )
         if sort_by_status:
             res = res.order_by("status")
@@ -200,7 +203,7 @@ class Repo:
         res = UserModel.objects.filter(taskassignmentmodel__task__id=task.id)
         return (model.as_entity(self) for model in res)
 
-    def get_journal_records_for_task(self, task: TaskModel):
+    def get_journal_records_for_task(self, task: Task):
         """
         Возвращает записи журнала для задачи.
 
@@ -211,7 +214,7 @@ class Repo:
         res = JournalRecordModel.objects.filter(task__id=task.id)
         return (model.as_entity(self) for model in res)
 
-    def get_journal_records_for_user(self, user: UserModel):
+    def get_journal_records_for_user(self, user: User):
         """
         Возвращает записи журнала для пользователя.
 
@@ -222,7 +225,7 @@ class Repo:
         res = JournalRecordModel.objects.filter(user__id=user.id)
         return (model.as_entity(self) for model in res)
 
-    def get_journal_records_for_project(self, project: ProjectModel):
+    def get_journal_records_for_project(self, project: Project):
         """
         Возвращает записи журнала для проекта.
 
