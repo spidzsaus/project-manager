@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Iterable
 from uuid import UUID
 from datetime import datetime
 
@@ -9,6 +9,7 @@ from projectsapp.models import (
     ProjectModel,
     MembershipModel,
     JournalRecordModel,
+    TaskDependencyModel,
 )
 
 from projectsapp.entities.projects import Project
@@ -70,7 +71,7 @@ class Repo:
         )
         task_model.save()
         return task_model.as_entity(self)
-    
+
     def insert_journal_record(self, record: JournalRecord) -> JournalRecord:
         """
         Добавляет запись в журнал в репозиторий.
@@ -100,7 +101,7 @@ class Repo:
 
         res = UserModel.objects.filter(id=id).first()
         return res and res.as_entity(self)
-    
+
     def get_user_by_name(self, name: str) -> User | None:
         """
         Возвращает пользователя по его имени или None, если такого пользователя нет.
@@ -134,7 +135,9 @@ class Repo:
         res = TaskModel.objects.filter(id=id).first()
         return res and res.as_entity(self)
 
-    def get_tasks_for_user(self, user: User, project: Project, sort_by_status: bool = False):
+    def get_tasks_for_user(
+        self, user: User, project: Project, sort_by_status: bool = False
+    ):
         """
         Возвращает задачи, которые назначены пользователю в рамках конкретного проекта.
 
@@ -175,18 +178,18 @@ class Repo:
 
     def get_users_for_project(self, project: Project):
         """
-        Возвращает пользователей, которые состоят в команде данного проекта.
+        Возвращает пользователей, которые состоят в команде данного проекта.
 
         :param project: проект
         :return: пользователи
         """
 
-        res = UserModel.objects.filter(membershipmodel__project__id=project.id).order_by(
-            "membershipmodel__is_admin"
-        )
+        res = UserModel.objects.filter(
+            membershipmodel__project__id=project.id
+        ).order_by("membershipmodel__is_admin")
         return (model.as_entity(self) for model in res)
 
-    def get_users_for_task(self, task: TaskModel):
+    def get_users_for_task(self, task: Task):
         """
         Возвращает пользователей, которые назначены на задачу.
 
@@ -207,7 +210,7 @@ class Repo:
 
         res = JournalRecordModel.objects.filter(task__id=task.id)
         return (model.as_entity(self) for model in res)
-    
+
     def get_journal_records_for_user(self, user: UserModel):
         """
         Возвращает записи журнала для пользователя.
@@ -229,14 +232,14 @@ class Repo:
 
         res = JournalRecordModel.objects.filter(task__parent_project__id=project.id)
         return (model.as_entity(self) for model in res)
-    
+
     def get_journal_record_by_id(self, id: UUID) -> JournalRecord | None:
         """
         Возвращает запись журнала по ее id или None, если такой записи нет.
 
         :param id: id записи журнала
         :return: запись журнала или None
-        """ 
+        """
 
         res = JournalRecordModel.objects.filter(id=id).first()
         return res and res.as_entity(self)
@@ -296,7 +299,6 @@ class Repo:
             return
         membership.is_admin = True
         membership.save()
-
 
     def remove_user_from_project(self, user: User, project: Project):
         """
@@ -391,8 +393,8 @@ class Repo:
         membership = MembershipModel.objects.filter(
             user__id=user.id, project__id=project.id
         ).first()
-        return membership and membership.is_admin
-    
+        return not not (membership and membership.is_admin)
+
     def delete_project(self, project: Project):
         project_model = ProjectModel.objects.filter(id=project.id).first()
         if not project_model:
@@ -407,8 +409,52 @@ class Repo:
 
     def delete_user(self, user: User):
         user_model = UserModel.objects.filter(id=user.id).first()
-        if not user_model:    
+        if not user_model:
             return
         user_model.delete()
-    
-    
+
+    def get_tasks_dependent_on_task(self, task: Task) -> Iterable[Task]:
+        """
+        Возвращает задачи, которые зависят от данной задачи.
+
+        :param task: задача
+        :return: задачи, зависящие от данной
+        """
+        task_dependency_models = TaskDependencyModel.objects.filter(
+            depends_on__id=task.id
+        )
+        return (
+            task_dependency_model.task.as_entity(self)
+            for task_dependency_model in task_dependency_models
+        )
+
+    def get_dependency_tasks_for_task(self, task: Task) -> Iterable[Task]:
+        """
+        Возвращает задачи, от которых зависит данная задача.
+
+        :param task: задача
+        :return: задачи, от которых зависит данная
+        """
+        task_dependency_models = TaskDependencyModel.objects.filter(task__id=task.id)
+        return (
+            task_dependency_model.depends_on.as_entity(self)
+            for task_dependency_model in task_dependency_models
+        )
+
+    def add_task_dependency(self, task: Task, depends_on: Task):
+        """
+        Добавляет зависимость между задачами.
+
+        :param task: задача, которая будет зависеть
+        :param depends_on: задача, от которой будет зависеть
+        """
+        task_model = TaskModel.objects.filter(id=task.id).first()
+        depends_on_model = TaskModel.objects.filter(id=depends_on.id).first()
+
+        if not task_model or not depends_on_model:
+            return
+
+        task_dependency_model = TaskDependencyModel(
+            task=task_model, depends_on=depends_on_model
+        )
+        task_dependency_model.save()

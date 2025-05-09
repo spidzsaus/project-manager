@@ -12,6 +12,7 @@ from projectsapp.entities.visitors import ChoicesVisitor
 
 from projectsapp.forms import CreateProjectForm, CreateTaskForm, InviteUserForm
 
+
 def mock_authenticate():
     """
     Фейковая функция аутентификации, возвращает всегда пользователя с ID 00000000-0000-0000-0000-000000000000
@@ -36,19 +37,21 @@ def mock_authenticate():
 
     return test_user
 
+
 def home(request):
     return render(request, "home.html")
+
 
 def create_project(request):
     user = mock_authenticate()
 
     if request.method == "POST":
         form = CreateProjectForm(request.POST)
-        
+
         if form.is_valid():
             name = form.cleaned_data["name"]
 
-            repo = Repo() 
+            repo = Repo()
             project = Project(name=name, repo=Repo())
             repo.insert_project(project)
 
@@ -57,43 +60,75 @@ def create_project(request):
             return redirect("projectsapp:projects")
     else:
         form = CreateProjectForm()
-            
 
     return render(request, "create_project.html", {"form": form})
+
 
 def create_task(request, project_id: UUID):
     user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
 
-    users_choices = map(lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users())
+    assert project is not None  # todo: handle this case
+
+    users_choices = map(
+        lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users()
+    )
+    tasks_choices = map(
+        lambda t: t.accept_visitor(ChoicesVisitor()), project.get_tasks()
+    )
 
     if request.method == "POST":
-        form = CreateTaskForm(users_choices, request.POST)
-        
+        form = CreateTaskForm(users_choices, tasks_choices, request.POST)
+
         if form.is_valid():
             name = form.cleaned_data["name"]
             description = form.cleaned_data["description"]
             end_date = form.cleaned_data["end_date"]
+            dependencies = form.cleaned_data["depends_on"]
+            assigned_to = form.cleaned_data["users"]
 
-            task = Task(name=name, description=description, end_date=end_date, parent_project=project, repo=repo)
+            task = Task(
+                name=name,
+                description=description,
+                end_date=end_date,
+                parent_project=project,
+                repo=repo,
+            )
             repo.insert_task(task)
 
-            task.assign_user(user)
-            
-    else:
-        form = CreateTaskForm(users=users_choices) # todo: pagination
+            for dependency_id in dependencies:
+                dependency_task = repo.get_task_by_id(UUID(dependency_id))
+                assert dependency_task is not None  # todo: handle this case
+                task.add_dependency(dependency_task)
 
-    return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
+            assigned_to_user = repo.get_user_by_id(UUID(assigned_to))
+            assert assigned_to_user is not None  # todo: handle this case
+
+            task.assign_user(assigned_to_user)
+
+        else:
+            raise Exception("Invalid form", form.errors, form.non_field_errors)
+
+    else:
+        form = CreateTaskForm(
+            users=users_choices, tasks=project.get_tasks()
+        )  # todo: pagination
+
+    return redirect(
+        f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True"
+    )
+
 
 def invite_user(request, project_id: UUID):
     user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
 
     if request.method == "POST":
         form = InviteUserForm(request.POST)
-        
+
         if form.is_valid():
             name = form.cleaned_data["name"]
 
@@ -101,19 +136,30 @@ def invite_user(request, project_id: UUID):
             user = repo.get_user_by_name(name)
             if not user:
                 return HttpResponseNotFound("User not found")
-            
+
             project.add_user(user)
 
-    return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
+    return redirect(
+        f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True"
+    )
+
 
 def create_task_form(project_id: UUID) -> CreateTaskForm:
     user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
 
-    users_choices = map(lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users())
+    users_choices = map(
+        lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users()
+    )
 
-    return CreateTaskForm(users_choices)
+    tasks_choices = map(
+        lambda t: t.accept_visitor(ChoicesVisitor()), project.get_tasks()
+    )
+
+    return CreateTaskForm(users_choices, tasks_choices)  # todo: pagination
+
 
 def invite_user_form(project_id: UUID) -> InviteUserForm:
     user = mock_authenticate()
@@ -122,11 +168,13 @@ def invite_user_form(project_id: UUID) -> InviteUserForm:
 
     return InviteUserForm()
 
+
 def project(request, project_id: UUID):
     no_fade = request.GET.get("no_fade") == "True"
     user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
     is_admin = user.is_admin_in_project(project)
 
     return render(
@@ -138,7 +186,7 @@ def project(request, project_id: UUID):
             "has_tasks": bool(user.get_tasks(project)),
             "no_fade": no_fade,
             "is_admin": is_admin,
-            "user": user
+            "user": user,
         },
     )
 
@@ -147,6 +195,7 @@ def manage_project(request, project_id: UUID):
     user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
 
     no_fade = request.GET.get("no_fade") == "True"
 
@@ -157,13 +206,14 @@ def manage_project(request, project_id: UUID):
         request,
         "manage_project.html",
         {
-            "project": project, 
-            "create_task_form": create_task_form(project_id), 
+            "project": project,
+            "create_task_form": create_task_form(project_id),
             "no_fade": no_fade,
             "invite_user_form": invite_user_form(project_id),
-            "records": project.get_journal_records()
+            "records": project.get_journal_records(),
         },
     )
+
 
 def projects(request):
     """
@@ -181,12 +231,15 @@ def projects(request):
     # с подстановкой списка проектов в параметр projects_list
     return render(request, "projects.html", {"projects_list": projects_list})
 
+
 def index(request):
     return render(request, "index.html")
+
 
 def change_task_status(request, project_id: UUID, task_id: UUID):
     repo = Repo()
     task = repo.get_task_by_id(task_id)
+    assert task is not None  # todo: handle this case
 
     if request.method == "POST":
         status = Task.Status(int(request.POST["status"]))
@@ -194,9 +247,11 @@ def change_task_status(request, project_id: UUID, task_id: UUID):
 
     return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
 
+
 def delete_task(request, project_id: UUID, task_id: UUID):
     repo = Repo()
     task = repo.get_task_by_id(task_id)
+    assert task is not None  # todo: handle this case
 
     user = mock_authenticate()
 
@@ -206,11 +261,15 @@ def delete_task(request, project_id: UUID, task_id: UUID):
     if request.method == "POST":
         repo.delete_task(task)
 
-    return redirect(f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True")
+    return redirect(
+        f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True"
+    )
+
 
 def delete_project(request, project_id: UUID):
     repo = Repo()
     project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
 
     user = mock_authenticate()
 

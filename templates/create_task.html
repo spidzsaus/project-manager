@@ -37,6 +37,10 @@
             <label for="id_users" class="form-label">Assign to user</label>
             {{ create_task_form.users }}
         </div>
+        <div class="form-group">
+            <label for="id_depends_on" class="form-label">Depends on</label>
+            {{ create_task_form.depends_on }}
+        </div>
         <input type="submit" class="btn btn-primary form-submit-btn" value="Create task">
     </form>
 </div>

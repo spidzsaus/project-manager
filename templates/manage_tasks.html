@@ -7,6 +7,7 @@
       <th style="width: 25%;">Name</th>
       <th style="width: 20%;">End date</th>
       <th style="width: 15%;">User</th>
+      <th style="width: 15%;">Depends on</th>
       <th style="width: 20%;">Status</th>
       <th style="width: 15%;">Description</th>
       <th style="width: 5%;">Action</th>
@@ -18,6 +19,8 @@
         <td style="width: 25%;">{{ task.name }}</td>
         <td style="width: 20%;">{{ task.end_date }}</td>
         <td style="width: 15%;">{% for user in task.get_users %}{{ user.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+        <td style="width: 15%;">{% for task in task.get_dependency_tasks %}{{ task.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+        
         <td style="width: 20%;">{{ task.status }}</td>
         <td style="width: 15%;">{{ task.description }}</td>
         <td style="width: 5%;">

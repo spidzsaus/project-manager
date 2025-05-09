@@ -12,18 +12,14 @@ from projectsapp.entities.records import JournalRecord
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
 
+
 class ProjectModel(models.Model):
-    id = models.UUIDField( 
-        primary_key = True, 
-        default = uuid4, 
-        editable = False
-    ) 
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=128)
     # ...
 
     def as_entity(self, repo: Repo) -> Project:
         return Project(id=self.id, name=self.name, repo=repo)
-
 
 
 class TaskModel(models.Model):
@@ -32,14 +28,13 @@ class TaskModel(models.Model):
         IN_PROCESS = 1
         DONE = 2
 
-    id = models.UUIDField( 
-         primary_key = True, 
-         default = uuid4, 
-         editable = False) 
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=128)
-    description = models.TextField(null=True)
-    parent_project = models.ForeignKey(ProjectModel, null=False, on_delete=models.CASCADE)
-    status = models.IntegerField(choices=Status, default=Status.TODO)
+    description = models.TextField(null=True, default=None, blank=True)
+    parent_project = models.ForeignKey(
+        ProjectModel, null=False, on_delete=models.CASCADE
+    )
+    status = models.IntegerField(choices=Status.choices, default=Status.TODO)
     end_date = models.DateTimeField(null=True)
     # ...
 
@@ -55,53 +50,49 @@ class TaskModel(models.Model):
             end_date=self.end_date,
             repo=repo,
         )
-    
+
+
+class TaskDependencyModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
+    task = models.ForeignKey(
+        TaskModel, null=False, on_delete=models.CASCADE, related_name="task"
+    )
+    depends_on = models.ForeignKey(
+        TaskModel, null=False, on_delete=models.CASCADE, related_name="depends_on"
+    )
+    dependency_timestamp = models.DateTimeField(auto_now_add=True)
 
 
 class UserModel(models.Model):
-    id = models.UUIDField( 
-        primary_key = True, 
-        default = uuid4, 
-        editable = False
-    ) 
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     name = models.CharField(max_length=128)
     # ...
 
     def as_entity(self, repo: Repo) -> User:
         return User(id=self.id, name=self.name, repo=repo)
-    
 
 
 class MembershipModel(models.Model):
-    id = models.UUIDField( 
-        primary_key = True, 
-        default = uuid4, 
-        editable = False
-    ) 
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(UserModel, null=False, on_delete=models.CASCADE)
     project = models.ForeignKey(ProjectModel, null=False, on_delete=models.CASCADE)
     is_admin = models.BooleanField(default=False)
 
+
 class TaskAssignmentModel(models.Model):
-    id = models.UUIDField( 
-        primary_key = True, 
-        default = uuid4, 
-        editable = False
-    ) 
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(UserModel, null=False, on_delete=models.CASCADE)
     task = models.ForeignKey(TaskModel, null=False, on_delete=models.CASCADE)
 
+
 class JournalRecordModel(models.Model):
-    id = models.UUIDField( 
-        primary_key = True, 
-        default = uuid4, 
-        editable = False
-    ) 
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     user = models.ForeignKey(UserModel, null=True, on_delete=models.SET_NULL)
     task = models.ForeignKey(TaskModel, null=True, on_delete=models.SET_NULL)
     project = models.ForeignKey(ProjectModel, null=True, on_delete=models.SET_NULL)
     date = models.DateTimeField(auto_now_add=True)
-    
+
     class EventType(models.IntegerChoices):
         ASSIGN_TASK_TO_USER = 0
         UNASSIGN_TASK_FROM_USER = 1
@@ -111,7 +102,7 @@ class JournalRecordModel(models.Model):
         ADD_USER_TO_PROJECT = 5
         PROMOTE_USER_IN_PROJECT = 6
 
-    event_type = models.IntegerField(choices=EventType)
+    event_type = models.IntegerField(choices=EventType.choices)
 
     def as_entity(self, repo: Repo) -> JournalRecord:
         return JournalRecord(

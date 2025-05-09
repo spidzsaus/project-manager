@@ -37,12 +37,11 @@ class Task(IDComparable):
         IN_PROCESS = 1
         DONE = 2
 
-
     name: str
-    description: str
+    description: str | None
     parent_project: Project
-    
-    end_date: datetime
+
+    end_date: datetime | None
 
     repo: Repo
 
@@ -67,7 +66,13 @@ class Task(IDComparable):
         """
 
         if not do_not_record:
-            record = JournalRecord(user=user, task=self, project=self.parent_project, event_type=JournalRecord.EventType.ASSIGN_TASK_TO_USER, repo=self.repo)
+            record = JournalRecord(
+                user=user,
+                task=self,
+                project=self.parent_project,
+                event_type=JournalRecord.EventType.ASSIGN_TASK_TO_USER,
+                repo=self.repo,
+            )
             self.repo.insert_journal_record(record)
 
         return self.repo.assign_task_to_user(user, self)
@@ -81,7 +86,13 @@ class Task(IDComparable):
         """
 
         if not do_not_record:
-            record = JournalRecord(user=user, task=self, project=self.parent_project, event_type=JournalRecord.EventType.UNASSIGN_TASK_FROM_USER, repo=self.repo)
+            record = JournalRecord(
+                user=user,
+                task=self,
+                project=self.parent_project,
+                event_type=JournalRecord.EventType.UNASSIGN_TASK_FROM_USER,
+                repo=self.repo,
+            )
             self.repo.insert_journal_record(record)
 
         return self.repo.unassign_user_from_task(user, self)
@@ -106,7 +117,13 @@ class Task(IDComparable):
                 case Task.Status.DONE:
                     event_type = JournalRecord.EventType.SET_DONE
 
-            record = JournalRecord(user=None, task=self, project=self.parent_project, event_type=event_type, repo=self.repo)
+            record = JournalRecord(
+                user=None,
+                task=self,
+                project=self.parent_project,
+                event_type=event_type,
+                repo=self.repo,
+            )
             self.repo.insert_journal_record(record)
 
         self.status = status
@@ -114,3 +131,12 @@ class Task(IDComparable):
 
     def accept_visitor(self, visitor: Visitor):
         return visitor.visit_task(self)
+
+    def get_tasks_dependent_on(self) -> Iterable[Task]:
+        return self.repo.get_tasks_dependent_on_task(self)
+
+    def get_dependency_tasks(self) -> Iterable[Task]:
+        return self.repo.get_dependency_tasks_for_task(self)
+
+    def add_dependency(self, dependency: Task):
+        self.repo.add_task_dependency(self, dependency)

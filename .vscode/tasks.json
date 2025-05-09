@@ -1,0 +1,47 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "RUN CONTAINER",
+            "type": "shell",
+            "command": "docker rmi projectmanager-server:latest --force && docker compose up --build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            }
+        },
+        {
+            "label": "migrate locally",
+            "type": "shell",
+            "command": "py manage.py migrate",
+            "presentation": {
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true,
+                "close": true,
+                "revealProblems": "onProblem"
+            }
+        },
+        {
+            "label": "make migrations",
+            "type": "shell",
+            "command": "py manage.py makemigrations",
+            "presentation": {
+                "close": false,
+                "reveal": "always",
+                "focus": true,
+                "echo": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true,
+                "revealProblems": "onProblem"
+            }
+        }
+    ]
+}

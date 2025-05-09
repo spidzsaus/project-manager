@@ -8,41 +8,64 @@ class CreateProjectForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["name"].widget.attrs.update({"class": "form-control"})
+
+
 class CreateTaskForm(forms.Form):
     name = forms.CharField(
         label="Task name",
         max_length=100,
-        widget=forms.TextInput(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
+        widget=forms.TextInput(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
     )
 
     description = forms.CharField(
         label="Task description",
-        widget=forms.Textarea(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
-    )  
+        widget=forms.Textarea(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
+    )
 
     end_date = forms.DateField(
         label="End date",
         required=True,
         widget=SelectDateWidget(
-            attrs={"class": "form-control", "style": "width: 20em; display: flex; flex-wrap: wrap; justify-content: space-between;"}
-        )
+            attrs={
+                "class": "form-control",
+                "style": "width: 20em; display: flex; flex-wrap: wrap; justify-content: space-between;",
+            }
+        ),
     )
     users = forms.ChoiceField(
         label="Assign to user",
-        choices=None,
-        widget=forms.Select(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
     )
 
-    def __init__(self, users, *args, **kwargs):
+    depends_on = forms.MultipleChoiceField(
+        label="Depends on",
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
+    )
+
+    def __init__(self, users, tasks, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["users"].choices = users
+        self.fields["depends_on"].choices = tasks
 
 
 class InviteUserForm(forms.Form):
     name = forms.CharField(
         label="User name",
         max_length=100,
-        widget=forms.TextInput(attrs={"class": "form-control form-control-lg", "style": "width: 20em"})
+        widget=forms.TextInput(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
     )
 
     def __init__(self, *args, **kwargs):
