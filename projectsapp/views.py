@@ -9,7 +9,13 @@ from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
 from projectsapp.entities.visitors import ChoicesVisitor
-from projectsapp.forms import CreateProjectForm, CreateTaskForm, InviteUserForm
+from projectsapp.forms import (
+    CreateProjectForm,
+    CreateTaskForm,
+    InviteUserForm,
+    AssignUserForm,
+    AssignDependencyForm,
+)
 from projectsapp.repo import Repo
 
 
@@ -161,6 +167,31 @@ def create_task_form(project_id: UUID) -> CreateTaskForm:
     return CreateTaskForm(users_choices, tasks_choices)  # todo: pagination
 
 
+def assign_user_form(project_id: UUID) -> AssignUserForm:
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
+
+    user_choices = map(
+        lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users()
+    )
+
+    return AssignUserForm(user_choices)
+
+
+def assign_dependency_form(project_id: UUID) -> AssignDependencyForm:
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
+
+    tasks_choices = map(
+        lambda t: t.accept_visitor(ChoicesVisitor()), project.get_tasks()
+    )
+    return AssignDependencyForm(tasks_choices)
+
+
 def invite_user_form(project_id: UUID) -> InviteUserForm:
     user = mock_authenticate()
     repo = Repo()
@@ -179,12 +210,13 @@ def project(request, project_id: UUID):
 
     tasks_by_statuses = repo.get_tasks_for_user_grouped_by_status(user, project)
 
-    complete_tasks = tasks_by_statuses.get(Task.Status.DONE, [])
-    active_tasks = tasks_by_statuses.get(Task.Status.IN_PROCESS, [])
-    todo_tasks = tasks_by_statuses.get(Task.Status.TODO, [])
+    complete_tasks = list(tasks_by_statuses.get(Task.Status.DONE, []))
+    active_tasks = list(tasks_by_statuses.get(Task.Status.IN_PROCESS, []))
+    todo_tasks = list(tasks_by_statuses.get(Task.Status.TODO, []))
 
     has_tasks = not not (complete_tasks or active_tasks or todo_tasks)
 
+    print(has_tasks, complete_tasks, active_tasks, todo_tasks)
     return render(
         request,
         "project.html",
@@ -222,6 +254,153 @@ def manage_project(request, project_id: UUID):
             "invite_user_form": invite_user_form(project_id),
             "records": project.get_journal_records(),
         },
+    )
+
+
+def manage_task(request, project_id: UUID, task_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    assert project is not None  # todo: handle this case
+    task = repo.get_task_by_id(task_id)
+    assert task is not None  # todo: handle this case
+
+    no_fade = request.GET.get("no_fade", "False") == "True"
+    is_admin = user.is_admin_in_project(project)
+
+    return render(
+        request,
+        "manage_task.html",
+        {
+            "project": project,
+            "task": task,
+            "assign_user_form": assign_user_form(project_id),
+            "assign_dependency_form": assign_dependency_form(project_id),
+        },
+    )
+
+
+def update_task(request, project_id: UUID, task_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task = repo.get_task_by_id(task_id)
+
+    if not project or not task:
+        return HttpResponseNotFound("Project or Task not found")
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        end_date = request.POST.get("end_date")
+
+        task.update_details(name=name, description=description, end_date=end_date)
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task', args=[project_id, task_id])}?no_fade=True"
+    )
+
+
+def assign_user_to_task(request, project_id: UUID, task_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task = repo.get_task_by_id(task_id)
+
+    if not project or not task:
+        return HttpResponseNotFound("Project or Task not found")
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    if request.method == "POST":
+        form = AssignUserForm(
+            map(lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users()),
+            request.POST,
+        )
+
+        if form.is_valid():
+            user_id = form.cleaned_data["user"]
+            user_to_assign = repo.get_user_by_id(UUID(user_id))
+            if user_to_assign:
+                task.assign_user(user_to_assign)
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task', args=[project_id, task_id])}?no_fade=True"
+    )
+
+
+def remove_user_from_task(request, project_id: UUID, task_id: UUID, user_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task = repo.get_task_by_id(task_id)
+    user_to_remove = repo.get_user_by_id(user_id)
+
+    if not project or not task or not user_to_remove:
+        return HttpResponseNotFound("Project, Task or User not found")
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    task.unassign_user(user_to_remove)
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task', args=[project_id, task_id])}?no_fade=True"
+    )
+
+
+def assign_dependency_to_task(request, project_id: UUID, task_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task = repo.get_task_by_id(task_id)
+
+    if not project or not task:
+        return HttpResponseNotFound("Project or Task not found")
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    if request.method == "POST":
+        form = AssignDependencyForm(
+            map(lambda t: t.accept_visitor(ChoicesVisitor()), project.get_tasks()),
+            request.POST,
+        )
+
+        if form.is_valid():
+            # TODO: ENSURE NO CYCLIC DEPENDENCIES
+            dependency_id = form.cleaned_data["dependency_task"]
+            print("!!!", dependency_id)
+            dependency = repo.get_task_by_id(UUID(dependency_id))
+            if dependency:
+                task.add_dependency(dependency)
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task', args=[project_id, task_id])}?no_fade=True"
+    )
+
+
+def remove_dependency_from_task(request, project_id: UUID, task_id: UUID, dep_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task = repo.get_task_by_id(task_id)
+    dependency = repo.get_task_by_id(dep_id)
+
+    if not project or not task or not dependency:
+        return HttpResponseNotFound("Project, Task or Dependency not found")
+
+    if not user.is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    task.remove_dependency(dependency)
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task', args=[project_id, task_id])}?no_fade=True"
     )
 
 

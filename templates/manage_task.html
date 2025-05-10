@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-lg py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'projectsapp:project' project.id %}" class="btn btn-outline-secondary">
+            ← Back to Project
+        </a>
+        <h2 class="mb-0">Manage Task</h2>
+        <span class="badge bg-{% if task.status %}success{% else %}secondary{% endif %}">
+            {{ task.status|yesno:"Active,Inactive" }}
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Task Details Column -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Task Details</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'projectsapp:update_task' project.id task.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label">Task Name</label>
+                            <input type="text" class="form-control" name="name" value="{{ task.name }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="4">{{ task.description }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" class="form-control" name="end_date" 
+                                   value="{{ task.end_date|date:'Y-m-d' }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Update Details</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users & Dependencies Column -->
+        <div class="col-lg-6">
+            <!-- Assigned Users Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">Assigned Users</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'projectsapp:assign_user' project.id task.id %}" class="mb-4">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            {{ assign_user_form.user }}
+                            <button type="submit" class="btn btn-info">Assign User</button>
+                        </div>
+                    </form>
+                    
+                    <div class="list-group">
+                        {% for user in task.get_users %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ user.name }}
+                            <form method="post" action="{% url 'projectsapp:remove_user' project.id task.id user.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dependencies Card -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">Dependencies</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'projectsapp:assign_dependency' project.id task.id %}" class="mb-4">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            {{ assign_dependency_form.dependency_task }}
+                            <button type="submit" class="btn btn-warning">Add Dependency</button>
+                        </div>
+                    </form>
+                    
+                    <div class="list-group">
+                        {% for dependency in task.get_dependency_tasks %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ dependency.name }}
+                            <form method="post" action="{% url 'projectsapp:remove_dependency' project.id task.id dependency.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timestamps Section -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h4 class="mb-0">Task Timeline</h4>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                {% if task.assigned_at %}
+                <dt class="col-sm-3">Assigned At</dt>
+                <dd class="col-sm-9">{{ task.assigned_at|date:"M d, Y H:i" }}</dd>
+                {% endif %}
+                
+                {% if task.started_at %}
+                <dt class="col-sm-3">Started At</dt>
+                <dd class="col-sm-9">{{ task.started_at|date:"M d, Y H:i" }}</dd>
+                {% endif %}
+                
+                {% if task.done_at %}
+                <dt class="col-sm-3">Completed At</dt>
+                <dd class="col-sm-9">{{ task.done_at|date:"M d, Y H:i" }}</dd>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from django import forms
 from django.forms.widgets import SelectDateWidget
+from fastapi import dependencies
 
 
 class CreateProjectForm(forms.Form):
@@ -70,3 +71,32 @@ class InviteUserForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class AssignUserForm(forms.Form):
+    user = forms.ChoiceField(
+        label="Team Member",
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
+    )
+
+    def __init__(self, users, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["user"].choices = users
+
+
+class AssignDependencyForm(forms.Form):
+    dependency_task = forms.ChoiceField(
+        label="Add dependencies",
+        choices=[],
+        required=False,
+        widget=forms.Select(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
+    )
+
+    def __init__(self, tasks, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["dependency_task"].choices = tasks

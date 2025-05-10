@@ -20,7 +20,7 @@
           </thead>
           <tbody>
               {% for task in project.get_tasks %}
-              <tr>
+              <tr class="clickable-row" data-url="{% url 'projectsapp:manage_task' project.id task.id %}">
                   <td>
                       <div class="d-flex align-items-center">
                           <i class="bi bi-card-checklist me-2 text-primary"></i>
@@ -45,10 +45,11 @@
                       </span>
                   </td>
                   <td>
-                      <button class="btn btn-sm btn-danger" data-bs-toggle="modal" 
-                              data-bs-target="#deleteModal{{ task.id }}">
-                          <i class="bi bi-trash"></i>
-                      </button>
+                    <button class="btn btn-sm btn-danger prevent-click" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteModal{{ task.id }}">
+                        <i class="bi bi-trash"></i>
+                    </button>
                   </td>
               </tr>
               {% endfor %}
@@ -71,6 +72,21 @@
       </div>
   </div>
 </div>
+
+<style>
+  .clickable-row {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+  }
+
+  .clickable-row:hover {
+      background-color: #f8f9fa;
+  }
+
+  .prevent-click {
+      cursor: default !important;
+  }
+</style>
 
 {% for task in project.get_tasks %}
 <div class="modal fade" id="deleteModal{{ task.id }}" tabindex="-1">
@@ -97,3 +113,17 @@
   </div>
 </div>
 {% endfor %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const rows = document.querySelectorAll('.clickable-row');
+      rows.forEach(row => {
+          row.addEventListener('click', function(e) {
+              // Check if the click was on the delete button or its children
+              if (!e.target.closest('.prevent-click')) {
+                  window.location.href = row.dataset.url;
+              }
+          });
+      });
+  });
+  </script>

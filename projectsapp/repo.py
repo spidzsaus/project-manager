@@ -405,6 +405,7 @@ class Repo:
         task_model.name = task.name
         task_model.status = task.status.value
         task_model.end_date = task.end_date
+        task_model.description = task.description
 
         # ...
         task_model.save()
@@ -492,3 +493,17 @@ class Repo:
             task=task_model, depends_on=depends_on_model
         )
         task_dependency_model.save()
+
+    def remove_task_dependency(self, task: Task, dependency: Task):
+        """
+        Удаляет зависимость задачи.
+
+        :param task: задача
+        :param dependency: зависимость
+        """
+
+        task_dependency_model = TaskDependencyModel.objects.filter(
+            task__id=task.id, depends_on__id=dependency.id
+        )
+
+        task_dependency_model.delete()

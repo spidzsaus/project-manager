@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from projectsapp.entities.users import User
     from projectsapp.repo import Repo
 
+
 @dataclass(eq=False)
 class JournalRecord(IDComparable):
     class EventType(Enum):
@@ -31,10 +32,9 @@ class JournalRecord(IDComparable):
     event_type: EventType
     repo: Repo
 
-
     id: UUID = field(default_factory=uuid4)
     date: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
-    
+
     @property
     def event_type_display(self):
         return self.event_type.name

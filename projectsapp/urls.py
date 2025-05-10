@@ -42,4 +42,34 @@ urlpatterns = [
     path(
         "delete_project/<uuid:project_id>/", views.delete_project, name="delete_project"
     ),
+    path(
+        "manage_task/<uuid:project_id>/<uuid:task_id>/",
+        views.manage_task,
+        name="manage_task",
+    ),
+    path(
+        "projects/<uuid:project_id>/tasks/<uuid:task_id>/update/",
+        views.update_task,
+        name="update_task",
+    ),
+    path(
+        "projects/<uuid:project_id>/tasks/<uuid:task_id>/assign-user/",
+        views.assign_user_to_task,
+        name="assign_user",
+    ),
+    path(
+        "projects/<uuid:project_id>/tasks/<uuid:task_id>/remove-user/<uuid:user_id>/",
+        views.remove_user_from_task,
+        name="remove_user",
+    ),
+    path(
+        "projects/<uuid:project_id>/tasks/<uuid:task_id>/assign-dependency/",
+        views.assign_dependency_to_task,
+        name="assign_dependency",
+    ),
+    path(
+        "projects/<uuid:project_id>/tasks/<uuid:task_id>/remove-dependency/<uuid:dep_id>/",
+        views.remove_dependency_from_task,
+        name="remove_dependency",
+    ),
 ]

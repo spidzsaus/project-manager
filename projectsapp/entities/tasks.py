@@ -141,6 +141,14 @@ class Task(IDComparable):
     def add_dependency(self, dependency: Task):
         self.repo.add_task_dependency(self, dependency)
 
+    def remove_dependency(self, dependency: Task):
+        self.repo.remove_task_dependency(self, dependency)
+
+    def update_details(self, **kwargs):
+        for key, value in kwargs.items():
+            self.__setattr__(key, value)
+        self.repo.update_task(self)
+
     def blocked_by(self) -> Iterable[Task]:
         blockers = set()
         for task in self.get_dependency_tasks():
@@ -148,7 +156,19 @@ class Task(IDComparable):
                 blockers.add(task)
         return blockers
 
+    def blocks_tasks(self) -> Iterable[Task]:
+        return self.repo.get_tasks_dependent_on_task(self)
+
     def is_complete(self, lazy=True) -> bool:
         if lazy:
             return self.status == Task.Status.DONE
         return not self.blocked_by() and self.status == Task.Status.DONE
+
+    def assigned_at(self) -> datetime:
+        return datetime.now()  # Заглушка, так как нет информации о времени назначения
+
+    def started_at(self) -> datetime:
+        return datetime.now()  # Заглушка, так как нет информации о времени начала
+
+    def done_at(self) -> datetime:
+        return datetime.now()  # Заглушка, так как нет информации о времени завершения
