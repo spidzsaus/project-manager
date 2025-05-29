@@ -16,6 +16,14 @@ if TYPE_CHECKING:
     from projectsapp.repo import Repo
 
 
+class CyclicDependencyError(Exception):
+    pass
+
+
+class SelfDependencyError(Exception):
+    pass
+
+
 @dataclass(eq=False)
 class Task(IDComparable):
     """
@@ -140,10 +148,10 @@ class Task(IDComparable):
 
     def add_dependency(self, dependency: Task):
         if dependency == self:
-            return
+            raise SelfDependencyError
         for task in dependency.dependency_dfs_backwards():
             if task == self:
-                return
+                raise CyclicDependencyError
         self.repo.add_task_dependency(self, dependency)
 
     def remove_dependency(self, dependency: Task):

@@ -3,10 +3,10 @@ from uuid import UUID
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import redirect, render
 from django.urls import reverse
-
+from django.contrib import messages
 
 from projectsapp.entities.projects import Project
-from projectsapp.entities.tasks import Task
+from projectsapp.entities.tasks import Task, CyclicDependencyError, SelfDependencyError
 from projectsapp.entities.users import User
 from projectsapp.entities.visitors import ChoicesVisitor
 from projectsapp.forms import (
@@ -372,12 +372,23 @@ def assign_dependency_to_task(request, project_id: UUID, task_id: UUID):
         )
 
         if form.is_valid():
-            # TODO: ENSURE NO CYCLIC DEPENDENCIES
             dependency_id = form.cleaned_data["dependency_task"]
-            print("!!!", dependency_id)
             dependency = repo.get_task_by_id(UUID(dependency_id))
             if dependency:
-                task.add_dependency(dependency)
+                try:
+                    task.add_dependency(dependency)
+                except CyclicDependencyError:
+                    messages.error(
+                        request,
+                        "Can't add cyclic dependency to task",
+                        extra_tags="cyclic-dependency",
+                    )
+                except SelfDependencyError:
+                    messages.error(
+                        request,
+                        "Task can't be dependent on itself",
+                        extra_tags="self-dependency",
+                    )
 
     return redirect(
         f"{reverse('projectsapp:manage_task', args=[project_id, task_id])}?no_fade=True"
