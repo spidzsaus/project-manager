@@ -139,6 +139,11 @@ class Task(IDComparable):
         return self.repo.get_dependency_tasks_for_task(self)
 
     def add_dependency(self, dependency: Task):
+        if dependency == self:
+            return
+        for task in self.get_tasks_dependent_on():
+            if task == dependency:
+                return
         self.repo.add_task_dependency(self, dependency)
 
     def remove_dependency(self, dependency: Task):
@@ -172,3 +177,12 @@ class Task(IDComparable):
 
     def done_at(self) -> datetime:
         return datetime.now()  # Заглушка, так как нет информации о времени завершения
+
+    def dependency_dfs(self, visited=None):
+        if visited is None:
+            visited = set()
+        visited.add(self)
+        yield self
+        for task in self.get_tasks_dependent_on():
+            if task not in visited:
+                yield from task.dependency_dfs(visited)
