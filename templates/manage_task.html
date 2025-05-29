@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="container-lg py-4">
-    <div class="notification-container">
+    <div class="position-relative">
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
             {{ message }}
@@ -138,20 +138,27 @@
 
 
 <style>
-    .notification-container {
-        position: fixed;
-        top: 5rem;
-        right: 2rem;
-        z-index: 1050;
-        max-width: 400px;
-    }
-    
+    /* Remove the fixed positioning styles */
     .alert {
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         border: none;
         border-radius: 8px;
+        margin-bottom: 1rem;
     }
     
+    /* Add animation fix */
+    .fade.show {
+        animation-duration: 0.3s;
+        animation-timing-function: ease-out;
+    }
     
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .alert.fade.show {
+        animation-name: fadeIn;
+    }
 </style>
 {% endblock %}

@@ -72,4 +72,44 @@ urlpatterns = [
         views.remove_dependency_from_task,
         name="remove_dependency",
     ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/update/",
+        views.update_task_category,
+        name="update_task_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/add-user/",
+        views.add_user_to_category,
+        name="add_user_to_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/remove-user/<uuid:user_id>/",
+        views.remove_user_from_category,
+        name="remove_user_from_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/add-task/",
+        views.add_task_to_category,
+        name="add_task_to_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/remove-task/<uuid:task_id>/",
+        views.remove_task_from_category,
+        name="remove_task_from_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/create-category/",
+        views.create_task_category,
+        name="create_task_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/",
+        views.manage_task_category,
+        name="manage_task_category",
+    ),
+    path(
+        "projects/<uuid:project_id>/categories/<uuid:category_id>/delete/",
+        views.delete_task_category,
+        name="delete_task_category",
+    ),
 ]

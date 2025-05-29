@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Iterable
 from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
+from projectsapp.entities.task_category import TaskCategory
 
 if TYPE_CHECKING:
     from projectsapp.entities.projects import Project
@@ -60,3 +61,18 @@ class User(IDComparable):
     @property
     def is_authenticated(self) -> bool:
         return True  # TODO
+
+    def get_task_categories(self) -> Iterable[TaskCategory]:
+        return self.repo.get_task_categories_for_user(self)
+
+    def is_suitable_for_task(self, task: Task) -> bool:
+        # TODO maybe it can be rewritten using SQL queries
+
+        task_categories = task.get_task_categories()
+        user_categories = self.get_task_categories()
+
+        for task_category in task_categories:
+            if task_category not in user_categories:
+                return False
+
+        return True

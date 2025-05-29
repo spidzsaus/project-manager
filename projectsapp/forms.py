@@ -100,3 +100,31 @@ class AssignDependencyForm(forms.Form):
     def __init__(self, tasks, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["dependency_task"].choices = tasks
+
+
+class AddUserToCategoryForm(forms.Form):
+    user = forms.ChoiceField(
+        label="Team Member",
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
+    )
+
+    def __init__(self, users, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["user"].choices = users
+
+
+class AddTaskToCategoryForm(forms.Form):
+    task = forms.ChoiceField(
+        label="Task",
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control form-control-lg", "style": "width: 20em"}
+        ),
+    )
+
+    def __init__(self, tasks, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["task"].choices = tasks

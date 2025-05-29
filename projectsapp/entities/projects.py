@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from projectsapp.entities import IDComparable
 from projectsapp.entities.records import JournalRecord
+from projectsapp.entities.task_category import TaskCategory
 
 if TYPE_CHECKING:
     from projectsapp.entities.tasks import Task
@@ -132,3 +133,9 @@ class Project(IDComparable):
                 complete_tasks_counter += 1
 
         return complete_tasks_counter / tasks_counter if tasks_counter else 0.0
+
+    def get_tasks_for_user(self, user: User) -> Iterable[Task]:
+        return self.repo.get_tasks_for_user(user, self)
+
+    def get_task_categories(self) -> Iterable[TaskCategory]:
+        return self.repo.get_task_categories_for_project(self)

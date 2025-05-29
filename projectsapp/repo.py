@@ -6,6 +6,7 @@ from projectsapp.entities.projects import Project
 from projectsapp.entities.records import JournalRecord
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
+from projectsapp.entities.task_category import TaskCategory
 from projectsapp.models import (
     JournalRecordModel,
     MembershipModel,
@@ -14,6 +15,9 @@ from projectsapp.models import (
     TaskDependencyModel,
     TaskModel,
     UserModel,
+    TaskCategoryModel,
+    TaskCategoryAssignmentModel,
+    UserTaskCategoryAssignmentModel,
 )
 
 # Docstrings and code comments are in Russian.
@@ -507,3 +511,128 @@ class Repo:
         )
 
         task_dependency_model.delete()
+
+    def get_tasks_in_task_category(self, task_category: TaskCategory) -> Iterable[Task]:
+        res = TaskModel.objects.filter(
+            taskcategoryassignmentmodel__task_category__id=task_category.id
+        )
+        return (model.as_entity(self) for model in res)
+
+    def get_users_for_task_category(
+        self, task_category: TaskCategory
+    ) -> Iterable[User]:
+        res = UserModel.objects.filter(
+            usertaskcategoryassignmentmodel__task_category__id=task_category.id
+        )
+        return (model.as_entity(self) for model in res)
+
+    def add_task_to_task_category(self, task: Task, task_category: TaskCategory):
+        task_model = TaskModel.objects.filter(id=task.id).first()
+        task_category_model = TaskCategoryModel.objects.filter(
+            id=task_category.id
+        ).first()
+
+        if not task_model or not task_category_model:
+            return
+
+        task_category_assignment_model = TaskCategoryAssignmentModel(
+            task=task_model, task_category=task_category_model
+        )
+        task_category_assignment_model.save()
+
+    def add_user_to_task_category(self, user: User, task_category: TaskCategory):
+        user_model = UserModel.objects.filter(id=user.id).first()
+        task_category_model = TaskCategoryModel.objects.filter(
+            id=task_category.id
+        ).first()
+
+        if not user_model or not task_category_model:
+            return
+
+        user_task_category_assignment_model = UserTaskCategoryAssignmentModel(
+            user=user_model, task_category=task_category_model
+        )
+        user_task_category_assignment_model.save()
+
+    def insert_task_category(self, task_category: TaskCategory):
+        task_category_model = TaskCategoryModel(
+            id=task_category.id,
+            name=task_category.name,
+            project=ProjectModel.objects.get(id=task_category.project.id),
+        )
+        task_category_model.save()
+
+    def get_task_categories_for_project(
+        self, project: Project
+    ) -> Iterable[TaskCategory]:
+        res = TaskCategoryModel.objects.filter(project__id=project.id)
+        return (model.as_entity(self) for model in res)
+
+    def get_task_categories_for_task(self, task: Task) -> Iterable[TaskCategory]:
+        res = TaskCategoryAssignmentModel.objects.filter(task__id=task.id)
+        return (model.task_category.as_entity(self) for model in res)
+
+    def get_task_categories_for_user(self, user: User) -> Iterable[TaskCategory]:
+        res = UserTaskCategoryAssignmentModel.objects.filter(user__id=user.id)
+        return (model.task_category.as_entity(self) for model in res)
+
+    def get_task_category_by_id(self, task_category_id: UUID) -> TaskCategory | None:
+        res = TaskCategoryModel.objects.filter(id=task_category_id).first()
+
+        return res and res.as_entity(self)
+
+    def update_task_category(self, task_category: TaskCategory):
+        task_category_model = TaskCategoryModel.objects.filter(
+            id=task_category.id
+        ).first()
+
+        if not task_category_model:
+            return
+
+        task_category_model.name = task_category.name
+        task_category_model.description = task_category.description
+        task_category_model.save()
+
+        return task_category
+
+    def delete_task_category(self, task_category: TaskCategory):
+        task_category_model = TaskCategoryModel.objects.filter(
+            id=task_category.id
+        ).first()
+
+        if not task_category_model:
+            return
+
+        task_category_model.delete()
+
+    def remove_task_from_task_category(self, task: Task, task_category: TaskCategory):
+        task_model = TaskModel.objects.filter(id=task.id).first()
+        task_category_model = TaskCategoryModel.objects.filter(
+            id=task_category.id
+        ).first()
+
+        if not task_model or not task_category_model:
+            return
+
+        task_category_assignment_model = TaskCategoryAssignmentModel.objects.filter(
+            task=task_model, task_category=task_category_model
+        )
+
+        task_category_assignment_model.delete()
+
+    def remove_user_from_task_category(self, user: User, task_category: TaskCategory):
+        user_model = UserModel.objects.filter(id=user.id).first()
+        task_category_model = TaskCategoryModel.objects.filter(
+            id=task_category.id
+        ).first()
+
+        if not user_model or not task_category_model:
+            return
+
+        user_task_category_assignment_model = (
+            UserTaskCategoryAssignmentModel.objects.filter(
+                user=user_model, task_category=task_category_model
+            )
+        )
+
+        user_task_category_assignment_model.delete()

@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from projectsapp.entities.users import User
     from projectsapp.entities.visitors import Visitor
     from projectsapp.repo import Repo
+    from projectsapp.entities.task_category import TaskCategory
 
 
 class CyclicDependencyError(Exception):
@@ -195,3 +196,11 @@ class Task(IDComparable):
         for task in self.get_dependency_tasks():
             if task not in visited:
                 yield from task.dependency_dfs_backwards(visited)
+
+    def get_task_categories(self):
+        return self.repo.get_task_categories_for_task(self)
+
+    def get_users_suitable_for_task(self):
+        for user in self.parent_project.get_users():
+            if user.is_suitable_for_task(self):
+                yield user

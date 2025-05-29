@@ -1,0 +1,102 @@
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">Task Categories</h4>
+        <a href="{% url 'projectsapp:create_task_category' project.id %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> New Category
+        </a>
+    </div>
+    
+    {% if task_categories %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for category in task_categories %}
+        <div class="col">
+            <div class="category-card card h-100 shadow-sm">
+                <div class="card-header bg-purple text-white d-flex align-items-center">
+                    <i class="bi bi-tag-fill me-2"></i>
+                    <h5 class="mb-0">{{ category.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ category.description|default:"No description"|truncatechars:100 }}</p>
+                    
+                    <div class="category-stats d-flex justify-content-between">
+                        <div>
+                            <i class="bi bi-people"></i>
+                            <span>{{ category.get_users|length }} users</span>
+                        </div>
+                        <div>
+                            <i class="bi bi-list-task"></i>
+                            <span>{{ category.get_tasks|length }} tasks</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'projectsapp:manage_task_category' project.id category.id %}" 
+                       class="btn btn-outline-purple w-100">
+                        <i class="bi bi-gear"></i> Manage Category
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state text-center py-5">
+        <div class="mb-3">
+            <i class="bi bi-tag display-4 text-muted"></i>
+        </div>
+        <h4 class="text-secondary mb-2">No Task Categories Yet</h4>
+        <p class="text-muted">Create your first category to start organizing tasks</p>
+        <a href="{% url 'projectsapp:create_task_category' project.id %}" class="btn btn-primary mt-3">
+            <i class="bi bi-plus-lg"></i> Create First Category
+        </a>
+    </div>
+    {% endif %}
+
+
+<style>
+    .category-card {
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+    
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    }
+    
+    .bg-purple {
+        background-color: #6f42c1;
+    }
+    
+    .btn-outline-purple {
+        color: #6f42c1;
+        border-color: #6f42c1;
+    }
+    
+    .btn-outline-purple:hover {
+        background-color: #6f42c1;
+        color: white;
+    }
+    
+    .category-stats {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-top: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .category-stats div {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .empty-state {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+</style>

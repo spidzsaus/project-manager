@@ -4,10 +4,12 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.contrib import messages
+from matplotlib import category
 
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task, CyclicDependencyError, SelfDependencyError
 from projectsapp.entities.users import User
+from projectsapp.entities.task_category import TaskCategory
 from projectsapp.entities.visitors import ChoicesVisitor
 from projectsapp.forms import (
     CreateProjectForm,
@@ -15,6 +17,8 @@ from projectsapp.forms import (
     InviteUserForm,
     AssignUserForm,
     AssignDependencyForm,
+    AddTaskToCategoryForm,
+    AddUserToCategoryForm,
 )
 from projectsapp.repo import Repo
 
@@ -253,6 +257,7 @@ def manage_project(request, project_id: UUID):
             "no_fade": no_fade,
             "invite_user_form": invite_user_form(project_id),
             "records": project.get_journal_records(),
+            "task_categories": project.get_task_categories(),
         },
     )
 
@@ -498,3 +503,277 @@ def delete_project(request, project_id: UUID):
         repo.delete_project(project)
 
     return redirect("projectsapp:projects")
+
+
+def update_task_category(request, project_id: UUID, category_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+
+    if not project or not task_category:
+        messages.error(request, "Project or Task Category not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+
+        task_category.update_details(name=name, description=description)
+        messages.success(request, "Category details updated successfully")
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
+    )
+
+
+def add_user_to_category(request, project_id: UUID, category_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+
+    if not project or not task_category:
+        messages.error(request, "Project or Task Category not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    if request.method == "POST":
+        form = AddUserToCategoryForm(
+            map(lambda u: u.accept_visitor(ChoicesVisitor()), project.get_users()),
+            request.POST,
+        )
+
+        if form.is_valid():
+            user_id = form.cleaned_data["user"]
+            user_to_add = repo.get_user_by_id(UUID(user_id))
+            if user_to_add:
+                try:
+                    task_category.add_user(user_to_add)
+                    messages.success(request, f"{user_to_add.name} added to category")
+                except Exception as e:
+                    messages.error(request, f"Error adding user: {str(e)}")
+            else:
+                messages.error(request, "User not found")
+        else:
+            messages.error(request, "Invalid form submission")
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
+    )
+
+
+def remove_user_from_category(
+    request, project_id: UUID, category_id: UUID, user_id: UUID
+):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+    user_to_remove = repo.get_user_by_id(user_id)
+
+    if not project or not task_category or not user_to_remove:
+        messages.error(request, "Project, Category or User not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    try:
+        task_category.remove_user(user_to_remove)
+        messages.success(request, f"{user_to_remove.name} removed from category")
+    except Exception as e:
+        messages.error(request, f"Error removing user: {str(e)}")
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
+    )
+
+
+def add_task_to_category(request, project_id: UUID, category_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+
+    if not project or not task_category:
+        messages.error(request, "Project or Task Category not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    if request.method == "POST":
+        form = AddTaskToCategoryForm(
+            map(lambda t: t.accept_visitor(ChoicesVisitor()), project.get_tasks()),
+            request.POST,
+        )
+
+        if form.is_valid():
+            task_id = form.cleaned_data["task"]
+            task_to_add = repo.get_task_by_id(UUID(task_id))
+            if task_to_add:
+                try:
+                    task_category.add_task(task_to_add)
+                    messages.success(
+                        request, f"Task '{task_to_add.name}' added to category"
+                    )
+                except Exception as e:
+                    messages.error(request, f"Error adding task: {str(e)}")
+            else:
+                messages.error(request, "Task not found")
+        else:
+            messages.error(request, "Invalid form submission")
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
+    )
+
+
+def remove_task_from_category(
+    request, project_id: UUID, category_id: UUID, task_id: UUID
+):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+    task_to_remove = repo.get_task_by_id(task_id)
+
+    if not project or not task_category or not task_to_remove:
+        messages.error(request, "Project, Category or Task not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    try:
+        task_category.remove_task(task_to_remove)
+        messages.success(request, f"Task '{task_to_remove.name}' removed from category")
+    except Exception as e:
+        messages.error(request, f"Error removing task: {str(e)}")
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
+    )
+
+
+def add_user_to_category_form(task_category: TaskCategory) -> AddUserToCategoryForm:
+    user = mock_authenticate()
+    repo = Repo()
+
+    project = task_category.project
+    category_users = task_category.get_users()
+
+    users_choices = map(
+        lambda u: u.accept_visitor(ChoicesVisitor()),
+        filter(lambda u: u not in category_users, project.get_users()),
+    )
+
+    return AddUserToCategoryForm(users_choices)
+
+
+def add_task_to_category_form(task_category: TaskCategory) -> AddTaskToCategoryForm:
+    user = mock_authenticate()
+    repo = Repo()
+
+    project = task_category.project
+    category_tasks = task_category.get_tasks()
+
+    tasks_choices = map(
+        lambda t: t.accept_visitor(ChoicesVisitor()),
+        filter(
+            lambda t: t not in category_tasks,
+            project.get_tasks(),
+        ),
+    )
+
+    return AddTaskToCategoryForm(tasks_choices)
+
+
+def manage_task_category(request, project_id: UUID, category_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+
+    if not project or not task_category:
+        messages.error(request, "Project or Task Category not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    return render(
+        request,
+        "manage_task_category.html",
+        {
+            "project": project,
+            "task_category": task_category,
+            "add_user_form": add_user_to_category_form(task_category),
+            "add_task_form": add_task_to_category_form(task_category),
+        },
+    )
+
+
+def create_task_category(request, project_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+
+    if not project:
+        messages.error(request, "Project not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    new_task_category = TaskCategory(
+        name="New Task Category", project=project, repo=repo
+    )
+
+    repo.insert_task_category(new_task_category)
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, new_task_category.id])}?no_fade=False"
+    )
+
+
+def delete_task_category(request, project_id: UUID, category_id: UUID):
+    user = mock_authenticate()
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    task_category = repo.get_task_category_by_id(category_id)
+
+    if not project or not task_category:
+        messages.error(request, "Project or Task Category not found")
+        return redirect(reverse("projectsapp:projects"))
+
+    if not user.is_admin_in_project(project):
+        messages.error(request, "You are not authorized to perform this action")
+        return redirect(reverse("projectsapp:projects"))
+
+    if request.method == "POST":
+        try:
+            repo.delete_task_category(task_category)
+            messages.success(request, "Category deleted successfully")
+            return redirect(
+                f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True"
+            )
+        except Exception as e:
+            messages.error(request, f"Error deleting category: {str(e)}")
+
+    return redirect(
+        f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
+    )

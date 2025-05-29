@@ -9,6 +9,7 @@ from projectsapp.entities.projects import Project
 from projectsapp.entities.records import JournalRecord
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
+from projectsapp.entities.task_category import TaskCategory
 
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
@@ -115,3 +116,31 @@ class JournalRecordModel(models.Model):
             repo=repo,
             id=self.id,
         )
+
+
+class TaskCategoryModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    name = models.CharField(max_length=128)
+    description = models.TextField(null=True, default=None, blank=True)
+    project = models.ForeignKey(ProjectModel, null=False, on_delete=models.CASCADE)
+
+    def as_entity(self, repo: Repo) -> TaskCategory:
+        return TaskCategory(
+            id=self.id, name=self.name, project=self.project.as_entity(repo), repo=repo
+        )
+
+
+class TaskCategoryAssignmentModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    task = models.ForeignKey(TaskModel, null=False, on_delete=models.CASCADE)
+    task_category = models.ForeignKey(
+        TaskCategoryModel, null=False, on_delete=models.CASCADE
+    )
+
+
+class UserTaskCategoryAssignmentModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    user = models.ForeignKey(UserModel, null=False, on_delete=models.CASCADE)
+    task_category = models.ForeignKey(
+        TaskCategoryModel, null=False, on_delete=models.CASCADE
+    )
