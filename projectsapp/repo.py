@@ -424,7 +424,7 @@ class Repo:
         user_model = UserModel.objects.filter(id=user.id).first()
         if not user_model:
             return
-        user_model.name = user.name
+        user_model.username = user.username
         # ...
         user_model.save()
 

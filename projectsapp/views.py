@@ -679,8 +679,6 @@ def remove_task_from_category(
 
 
 def add_user_to_category_form(task_category: TaskCategory) -> AddUserToCategoryForm:
-    user = authenticate(request)
-    repo = Repo()
 
     project = task_category.project
     category_users = task_category.get_users()
@@ -694,8 +692,6 @@ def add_user_to_category_form(task_category: TaskCategory) -> AddUserToCategoryF
 
 
 def add_task_to_category_form(task_category: TaskCategory) -> AddTaskToCategoryForm:
-    user = authenticate(request)
-    repo = Repo()
 
     project = task_category.project
     category_tasks = task_category.get_tasks()
@@ -799,7 +795,7 @@ def user_login(request):
         if form.is_valid():
             username = form.cleaned_data["username"]
             password = form.cleaned_data["password"]
-            user = authenticate(request, username=username, password=password)
+            user = old_authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
                 return redirect("projectsapp:projects")
