@@ -182,10 +182,12 @@ class Task(IDComparable):
         return datetime.now()  # Заглушка, так как нет информации о времени назначения
 
     def started_at(self) -> datetime:
-        return datetime.now()  # Заглушка, так как нет информации о времени начала
+        """Alias for get_start_date()"""
+        return self.get_start_date() or datetime.now()
 
     def done_at(self) -> datetime:
-        return datetime.now()  # Заглушка, так как нет информации о времени завершения
+        """Alias for get_finish_date()"""
+        return self.get_finish_date() or datetime.now()
 
     def dependency_dfs_backwards(self, visited=None):
         if visited is None:
@@ -204,3 +206,11 @@ class Task(IDComparable):
         for user in self.parent_project.get_users():
             if user.is_suitable_for_task(self):
                 yield user
+
+    def get_start_date(self):
+        record = self.repo.get_start_record_for_task(self)
+        return record and record.date
+
+    def get_finish_date(self):
+        record = self.repo.get_finish_record_for_task(self)
+        return record and record.date

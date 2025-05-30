@@ -1,4 +1,5 @@
 from uuid import UUID
+import datetime
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 from django.shortcuts import redirect, render
@@ -9,6 +10,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.shortcuts import render, redirect
 
 
+from projectsapp.analysis_unit import AnalysisUnit
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task, CyclicDependencyError, SelfDependencyError
 from projectsapp.entities.users import User
@@ -242,18 +244,20 @@ def manage_project(request, project_id: UUID):
     if not user.is_admin_in_project(project):
         return HttpResponseForbidden("You are not admin in this project")
 
-    return render(
-        request,
-        "manage_project.html",
-        {
-            "project": project,
-            "create_task_form": create_task_form(project_id),
-            "no_fade": no_fade,
-            "invite_user_form": invite_user_form(project_id),
-            "records": project.get_journal_records(),
-            "task_categories": project.get_task_categories(),
-        },
-    )
+    analysis = AnalysisUnit(project).cook_data()
+
+    params = {
+        "project": project,
+        "create_task_form": create_task_form(project_id),
+        "no_fade": no_fade,
+        "invite_user_form": invite_user_form(project_id),
+        "records": project.get_journal_records(),
+        "task_categories": project.get_task_categories(),
+    }
+
+    params.update(analysis)
+
+    return render(request, "manage_project.html", params)
 
 
 @login_required

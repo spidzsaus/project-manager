@@ -1,0 +1,563 @@
+<div class="analysis-dashboard">
+    <!-- Header -->
+    <div class="dashboard-header mb-5">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-0">Project Analysis: {{ project.name }}</h1>
+                <p class="text-muted">Performance metrics and insights for your project</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" id="export-pdf">
+                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </button>
+                <div class="dropdown">
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown">
+                        <i class="bi bi-calendar"></i> Last 30 Days
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#" data-range="7">Last 7 Days</a></li>
+                        <li><a class="dropdown-item" href="#" data-range="30">Last 30 Days</a></li>
+                        <li><a class="dropdown-item" href="#" data-range="90">Last 90 Days</a></li>
+                        <li><a class="dropdown-item" href="#" data-range="0">All Time</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card summary-card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Completion Rate</h5>
+                            <h2 class="mb-0">{{ metrics.completion_rate }}%</h2>
+                        </div>
+                        <i class="bi bi-check-circle display-4"></i>
+                    </div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: {{ metrics.completion_rate }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Active Tasks</h5>
+                            <h2 class="mb-0">{{ metrics.active_tasks }}</h2>
+                        </div>
+                        <i class="bi bi-list-task display-4"></i>
+                    </div>
+                    <p class="mb-0 mt-2 small">Avg. time: {{ metrics.avg_task_duration }} days</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">Team Members</h5>
+                            <h2 class="mb-0">{{ metrics.team_members }}</h2>
+                        </div>
+                        <i class="bi bi-people display-4"></i>
+                    </div>
+                    <p class="mb-0 mt-2 small">Active: {{ metrics.active_members }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card summary-card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title">On Time Rate</h5>
+                            <h2 class="mb-0">{{ metrics.on_time_rate }}%</h2>
+                        </div>
+                        <i class="bi bi-clock display-4"></i>
+                    </div>
+                    <p class="mb-0 mt-2 small">Delayed: {{ metrics.delayed_tasks }} tasks</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Timeline Visualization -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Project Timeline</h5>
+                </div>
+                <div class="card-body">
+                    <div id="timeline-chart" style="height: 300px;"></div>
+                </div>
+            </div>
+            
+            <!-- Task Distribution -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4 h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Task Status Distribution</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="task-distribution-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card mb-4 h-100">
+                        <div class="card-header">
+                            <h5 class="mb-0">Task Completion Rate</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container">
+                                <canvas id="completion-trend-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Team Performance -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Team Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container mb-4">
+                        <canvas id="team-performance-chart"></canvas>
+                    </div>
+                    
+                    <div class="team-members-list">
+                        {% for member in team_performance %}
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar bg-primary me-3">
+                                {{ member.name|slice:":1"|upper }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ member.name }}</strong>
+                                    <span class="badge bg-success">{{ member.completed_tasks }} tasks</span>
+                                </div>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" style="width: {{ member.completion_rate }}%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small mt-1">
+                                    <span>Efficiency: {{ member.efficiency }}%</span>
+                                    <span>Avg. time: {{ member.avg_completion_time }}d</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Task Dependencies 
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Task Dependencies</h5>
+                </div>
+                <div class="card-body">
+                    
+
+                    <div id="dependency-chart" style="height: 300px;">
+                        <pre class="mermaid">
+                            graph LR
+                            {% for dependency in task_dependencies %}
+                            {{ dependency.from }}["{{ dependency.from_name }}"] - -> {{ dependency.to }}["{{ dependency.to_name }}"]
+                            {% endfor %}
+                        </pre>
+                    </div>
+                </div>
+            </div>
+            -->
+        </div>
+    </div>
+    
+    <!-- Detailed Metrics -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Detailed Performance Metrics</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Assigned</th>
+                            <th>Completed</th>
+                            <th>In Progress</th>
+                            <th>On Time Rate</th>
+                            <th>Avg. Time</th>
+                            <th>Efficiency</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in team_performance %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm bg-primary me-2">
+                                        {{ member.name|slice:":1"|upper }}
+                                    </div>
+                                    {{ member.name }}
+                                </div>
+                            </td>
+                            <td>{{ member.assigned_tasks }}</td>
+                            <td>{{ member.completed_tasks }}</td>
+                            <td>{{ member.in_progress_tasks }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">{{ member.on_time_rate }}%</span>
+                                    <div class="progress flex-grow-1" style="height: 6px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ member.on_time_rate }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ member.avg_completion_time }} days</td>
+                            <td>
+                                <span class="badge bg-{% if member.efficiency > 80 %}success{% elif member.efficiency > 60 %}warning{% else %}danger{% endif %}">
+                                    {{ member.efficiency }}%
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .analysis-dashboard {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .summary-card {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: none;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 250px;
+    }
+    
+    .progress {
+        border-radius: 10px;
+        background-color: #e9ecef;
+    }
+    
+    .team-members-list {
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+    
+    /* Custom scrollbar */
+    .team-members-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .team-members-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .team-members-list::-webkit-scrollbar-thumb {
+        background: #c5c5c5;
+        border-radius: 10px;
+    }
+    
+    .team-members-list::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Include ApexCharts for timeline -->
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ 
+        startOnLoad: false,  // Must be false for manual rendering
+        theme: 'default',
+        securityLevel: 'loose',
+        flowchart: { 
+            useMaxWidth: false,
+            htmlLabels: true
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const dependencyChart = document.getElementById('dependency-chart');
+            // Render and inject SVG
+            const { svg } = await mermaid.render('dependency-graph', dependencyChart.textContent);
+            dependencyChart.innerHTML = svg;
+        } catch (e) {
+            alert('Mermaid error:', e);
+            dependencyChart.innerHTML = `<div class="text-center py-4">
+                <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+                <p class="mt-2 text-danger">Error rendering dependencies</p>
+                <p class="small">${e.message}</p>
+            </div>`;
+        }
+    
+    });
+  </script>
+<script>
+    // Task Distribution Chart (Doughnut)
+    
+    const taskDistributionCtx = document.getElementById('task-distribution-chart').getContext('2d');
+    const taskDistributionChart = new Chart(taskDistributionCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'In Progress', 'Not Started'],
+            datasets: [{
+                data: [{{ task_distribution.completed }}, {{ task_distribution.in_progress }}, {{ task_distribution.not_started }}],
+                backgroundColor: ['#28a745', '#17a2b8', '#6c757d'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 20
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // Completion Trend Chart (Line)
+    const completionTrendCtx = document.getElementById('completion-trend-chart').getContext('2d');
+    const completionTrendChart = new Chart(completionTrendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ completion_trend.labels|safe }},
+            datasets: [{
+                label: 'Tasks Completed',
+                data: {{ completion_trend.data|safe }},
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.3,
+                fill: true,
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // Team Performance Chart (Radar)
+    const teamPerformanceCtx = document.getElementById('team-performance-chart').getContext('2d');
+    const teamPerformanceChart = new Chart(teamPerformanceCtx, {
+        type: 'radar',
+        data: {
+            labels: ['Task Completion', 'On Time Rate', 'Efficiency', 'Task Volume', 'Collaboration'],
+            datasets: [
+                {% for member in team_performance %}
+                {
+                    label: '{{ member.name }}',
+                    data: [
+                        {{ member.completion_rate }},
+                        {{ member.on_time_rate }},
+                        {{ member.efficiency }},
+                        {{ member.task_volume }},
+                        {{ member.collaboration }}
+                    ],
+                    backgroundColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.2)`,
+                    borderColor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(0, 0, 0, 0.8)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                },
+                {% endfor %}
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 100
+                }
+            }
+        }
+    });
+
+    // Timeline Chart (using ApexCharts)
+    const timelineOptions = {
+        series: [
+            {
+                data: {{ timeline_data|safe }}
+            }
+        ],
+        chart: {
+            height: 300,
+            type: 'rangeBar',
+            toolbar: {
+                show: true
+            }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: true,
+                barHeight: '50%',
+                rangeBarGroupRows: true
+            }
+        },
+        colors: ['#28a745', '#17a2b8', '#ffc107', '#dc3545'],
+        xaxis: {
+            type: 'datetime'
+        },
+        legend: {
+            position: 'top'
+        },
+        tooltip: {
+            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+                return `<div class="apexcharts-tooltip-custom">
+                    <strong>${data.x}</strong>
+                    <div>Status: ${data.status}</div>
+                    <div>Assigned to: ${data.assigned_to || 'Unassigned'}</div>
+                    <div>Duration: ${data.duration} days</div>
+                </div>`;
+            }
+        }
+    };
+
+    const timelineChart = new ApexCharts(document.querySelector("#timeline-chart"), timelineOptions);
+    timelineChart.render();
+
+    // Dependency Chart (using Mermaid)
+    /*
+    document.addEventListener('DOMContentLoaded', function() {
+        const dependencyChart = document.getElementById('dependency-chart');
+        const graphDefinition = `graph LR
+            {% for dependency in task_dependencies %}
+           {{ dependency.from }}["{{ dependency.from_name }}"] --> {{ dependency.to }}["{{ dependency.to_name }}"]
+             
+            {% endfor %}
+        `;
+        
+        dependencyChart.innerHTML = `<div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Rendering dependency graph</p>
+        </div>`;
+        
+        setTimeout(() => {
+            try {
+                mermaid.initialize({ 
+                    startOnLoad: true,
+                    theme: 'default',
+                    securityLevel: 'loose'
+                });
+                mermaid.render('dependency-graph', graphDefinition, function(svgCode) {
+                    dependencyChart.innerHTML = svgCode;
+                });
+            } catch (e) {
+                dependencyChart.innerHTML = `<div class="text-center py-4">
+                    <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2">Could not render dependency graph</p>
+                    <button class="btn btn-sm btn-outline-primary mt-2">Try Again</button>
+                </div>`;
+            }
+        }, 500);
+    });
+    */
+
+    // Time range filter
+    document.querySelectorAll('.dropdown-item[data-range]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const range = this.getAttribute('data-range');
+            document.getElementById('timeRangeDropdown').innerHTML = 
+                `<i class="bi bi-calendar"></i> ${this.textContent}`;
+            
+            // Implement actual filtering - would reload page with new range parameter
+            console.log('Filtering for range:', range);
+        });
+    });
+
+    // Export PDF
+    document.getElementById('export-pdf').addEventListener('click', function() {
+        // Implement PDF export functionality
+        alert('PDF export functionality would be implemented here');
+    });
+</script>
+{% endblock %}

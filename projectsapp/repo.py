@@ -2,6 +2,11 @@ from datetime import datetime
 from typing import Callable, Iterable
 from uuid import UUID
 
+from django.db.models import Count, Q, F, ExpressionWrapper, fields, Avg
+from django.db.models.functions import Coalesce, ExtractDay
+from django.utils import timezone
+from datetime import timedelta
+
 from projectsapp.entities.projects import Project
 from projectsapp.entities.records import JournalRecord
 from projectsapp.entities.tasks import Task
@@ -636,3 +641,128 @@ class Repo:
         )
 
         user_task_category_assignment_model.delete()
+
+    def get_start_record_for_task(self, task: Task) -> JournalRecord | None:
+        res = JournalRecordModel.objects.filter(
+            task__id=task.id, event_type=JournalRecordModel.EventType.SET_IN_PROCESS
+        ).first()
+        return res and res.as_entity(self)
+
+    def get_finish_record_for_task(self, task: Task) -> JournalRecord | None:
+        res = JournalRecordModel.objects.filter(
+            task__id=task.id, event_type=JournalRecordModel.EventType.SET_DONE
+        ).first()
+        return res and res.as_entity(self)
+
+    def count_tasks_in_project(self, project: Project) -> int:
+        return TaskModel.objects.filter(parent_project__id=project.id).count()
+
+    def count_completed_tasks_in_project(self, project: Project) -> int:
+        return TaskModel.objects.filter(
+            parent_project__id=project.id, status=TaskModel.Status.DONE
+        ).count()
+
+    def count_active_tasks_in_project(self, project: Project) -> int:
+        return TaskModel.objects.filter(
+            parent_project__id=project.id, status=TaskModel.Status.IN_PROCESS
+        ).count()
+
+    def count_not_started_tasks_in_project(self, project: Project) -> int:
+        return TaskModel.objects.filter(
+            parent_project__id=project.id, status=TaskModel.Status.TODO
+        ).count()
+
+    def count_delayed_tasks_in_project(self, project: Project, today: datetime) -> int:
+        return TaskModel.objects.filter(
+            parent_project__id=project.id,
+            end_date__lt=today,
+            status__in=[TaskModel.Status.TODO, TaskModel.Status.IN_PROCESS],
+        ).count()
+
+    def count_completed_tasks_in_date_range(
+        self, project: Project, start_date: datetime, end_date: datetime
+    ) -> int:
+        return JournalRecordModel.objects.filter(
+            task__parent_project__id=project.id,
+            event_type=JournalRecordModel.EventType.SET_DONE,
+            date__range=[start_date, end_date],
+        ).count()
+
+    def get_data_rich_members(self, project: Project, today: datetime):
+        return UserModel.objects.filter(
+            membershipmodel__project__id=project.id
+        ).annotate(
+            assigned_tasks=Count(
+                "taskassignmentmodel",
+                filter=Q(taskassignmentmodel__task__parent_project__id=project.id),
+            ),
+            completed_tasks=Count(
+                "taskassignmentmodel",
+                filter=Q(
+                    taskassignmentmodel__task__parent_project__id=project.id,
+                    taskassignmentmodel__task__status=TaskModel.Status.DONE,
+                ),
+            ),
+            in_progress_tasks=Count(
+                "taskassignmentmodel",
+                filter=Q(
+                    taskassignmentmodel__task__parent_project__id=project.id,
+                    taskassignmentmodel__task__status=TaskModel.Status.IN_PROCESS,
+                ),
+            ),
+            delayed_tasks=Count(
+                "taskassignmentmodel",
+                filter=Q(
+                    taskassignmentmodel__task__parent_project__id=project.id,
+                    taskassignmentmodel__task__end_date__lt=today,
+                    taskassignmentmodel__task__status__in=[
+                        TaskModel.Status.TODO,
+                        TaskModel.Status.IN_PROCESS,
+                    ],
+                ),
+            ),
+        )
+
+    def get_data_rich_dependencies(self, project: Project):
+        return TaskDependencyModel.objects.filter(
+            task__parent_project__id=project.id
+        ).select_related("task", "depends_on")
+
+    def get_complete_tasks(self, project: Project) -> Iterable[Task]:
+        return (
+            model.as_entity(self)
+            for model in TaskModel.objects.filter(
+                parent_project__id=project.id, status=TaskModel.Status.DONE
+            )
+        )
+
+    def count_team_members(self, project: Project) -> int:
+        return UserModel.objects.filter(membershipmodel__project__id=project.id).count()
+
+    def count_busy_members(self, project: Project) -> int:
+        return (
+            TaskAssignmentModel.objects.filter(
+                task__parent_project__id=project.id,
+                task__status=TaskModel.Status.IN_PROCESS,
+            )
+            .values("user")
+            .distinct()
+            .count()
+        )
+
+    def get_tasks_completed_by_user(
+        self, project: Project, user: User
+    ) -> Iterable[Task]:
+        return (
+            model.as_entity(self)
+            for model in TaskModel.objects.filter(
+                taskassignmentmodel__user__id=user.id,
+                taskassignmentmodel__task__parent_project__id=project.id,
+                taskassignmentmodel__task__status=TaskModel.Status.DONE,
+            )
+        )
+
+    def count_member_assignments(self, project: Project, user: User) -> int:
+        return TaskAssignmentModel.objects.filter(
+            task__parent_project__id=project.id, user__id=user.id
+        ).count()
