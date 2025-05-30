@@ -136,7 +136,7 @@ class AnalysisUnit:
                     "efficiency": round(efficiency, 1),
                     "task_volume": min(100, assigned * 10),
                     "collaboration": min(
-                        100, (repo.count_team_members(self.project) / 5) * 100
+                        100, (repo.count_team_members(self.project) / 5) * efficiency
                     ),
                 }
             )
