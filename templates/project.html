@@ -12,13 +12,11 @@
             </a>
             {% endif %}
         </div>
-        
-        
     </div>
+    
     <div class="project-header-card">
-      {% include "project_header.html" %}
-  
-
+        {% include "project_header.html" %}
+    </div>
 
     <div class="project-content">
         <ul class="nav nav-pills mb-4" role="tablist">
@@ -28,15 +26,35 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#dependencies">
+                    <i class="bi bi-diagram-3 me-2"></i>Dependencies
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#members">
                     <i class="bi bi-people me-2"></i>Team Members
                 </button>
             </li>
-          </ul>
+        </ul>
 
         <div class="tab-content">
             <div class="tab-pane fade show active" id="your-tasks">
                 {% include "your_tasks.html" %}
+            </div>
+            
+            <div class="tab-pane fade" id="dependencies">
+                <div class="card">
+                    <div class="card-body">
+                        <div id="dependency-graph-container" style="min-height: 400px;">
+                            <pre class="mermaid">
+                                graph TD
+                                {% for dependency in task_dependencies %}
+                                {{ dependency.from }}["{{ dependency.from_name }}"] --> {{ dependency.to }}["{{ dependency.to_name }}"]
+                                {% endfor %}
+                            </pre>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="tab-pane fade" id="members">
@@ -58,12 +76,8 @@
                         {% endfor %}
                     </div>
                 </div>
-              
             </div>
-          
         </div>
-      </div>
-      
     </div>
 </div>
 
@@ -82,18 +96,18 @@
     }
 
     .nav-pills .nav-link {
-      padding: 0.75rem 1.5rem;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      background-color: #f1f5f9 !important;
-      color: #64748b !important;
-  }
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        background-color: #f1f5f9 !important;
+        color: #64748b !important;
+    }
   
-  .nav-pills .nav-link.active {
-      background-color: #1d4ed8 !important;
-      color: white !important;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
+    .nav-pills .nav-link.active {
+        background-color: #1d4ed8 !important;
+        color: white !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
 
     .member-card {
         display: flex;
@@ -127,7 +141,112 @@
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #f1f5f9;
     }
-
     
+    /* Mermaid styling */
+    .mermaid {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .mermaid svg {
+        max-width: 100%;
+        height: auto;
+    }
+    .mermaid .node rect,
+    .mermaid .node polygon,
+    .mermaid .node circle {
+        overflow: visible !important;
+    }
+    
+    .mermaid .node text {
+        white-space: normal !important;
+        text-align: center;
+        transform: translateY(0.3em);
+    }
+    
+    .mermaid .label {
+        white-space: normal !important;
+        text-align: center;
+    }
 </style>
+
+<!-- Mermaid initialization script -->
+<script type="module">
+    // Only load and initialize Mermaid when the dependencies tab is active
+    const renderMermaid = async () => {
+        const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');
+        
+        mermaid.initialize({ 
+            startOnLoad: false,  // We'll render manually
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: { 
+                useMaxWidth: false,  // Disable max width constraint
+                htmlLabels: true,    // Use HTML labels for better text handling
+                wrap: true,          // Enable text wrapping
+                nodeSpacing: 150,    // Increase spacing between nodes
+                rankSpacing: 100,    // Increase spacing between ranks
+            },
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+        });
+        
+        try {
+            const graphElement = document.querySelector('#dependencies pre.mermaid');
+            if (graphElement) {
+                const graphDefinition = graphElement.textContent;
+                const { svg } = await mermaid.render('dependency-graph', graphDefinition);
+                graphElement.innerHTML = svg;
+
+                setTimeout(() => {
+                    const labels = graphElement.querySelectorAll('.node text, .edgeLabel text');
+                    labels.forEach(label => {
+                        // Remove any existing transforms that might cause clipping
+                        label.removeAttribute('transform');
+                        
+                        // Adjust position if needed
+                        const bbox = label.getBBox();
+                        const container = label.closest('g');
+                        if (container) {
+                            container.setAttribute('transform', `translate(0, ${bbox.height/4})`);
+                        }
+                    });
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Mermaid rendering error:', error);
+            const container = document.getElementById('dependency-graph-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error rendering dependency graph: ${error.message}
+                    </div>
+                `;
+            }
+        }
+    };
+
+    // Render when dependencies tab is shown
+    const dependenciesTab = document.getElementById('dependencies');
+    const tabTrigger = document.querySelector('[data-bs-target="#dependencies"]');
+    
+    if (tabTrigger) {
+        tabTrigger.addEventListener('shown.bs.tab', () => {
+            // Only render if not already rendered
+            if (!document.querySelector('#dependencies svg')) {
+                renderMermaid();
+            }
+        });
+    }
+    
+    // Render immediately if dependencies tab is active on page load
+    if (dependenciesTab && dependenciesTab.classList.contains('active')) {
+        renderMermaid();
+    }
+</script>
 {% endblock content %}

@@ -229,6 +229,7 @@ def project(request, project_id: UUID):
             "has_tasks": has_tasks,
             "no_fade": no_fade,
             "is_admin": is_admin,
+            "task_dependencies": AnalysisUnit(project)._dependencies_data(),
         },
     )
 
