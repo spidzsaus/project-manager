@@ -20,11 +20,11 @@ class User(IDComparable):
     Сущность пользователя.
 
     :param id: уникальный идентификатор пользователя
-    :param name: имя пользователя
+    :param username: имя пользователя
     :param repo: репозиторий
     """
 
-    name: str
+    username: str
     repo: Repo
 
     id: UUID = field(default_factory=uuid4)
@@ -76,3 +76,14 @@ class User(IDComparable):
                 return False
 
         return True
+
+    @property
+    def name(self) -> str:
+        return self.username
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self.username = value
+
+    def __str__(self) -> str:
+        return self.username

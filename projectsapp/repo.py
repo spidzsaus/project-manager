@@ -35,7 +35,7 @@ class Repo:
         :return: добавленный пользователь
         """
 
-        user_model = UserModel(id=user.id, name=user.name)  # ...
+        user_model = UserModel(id=user.id, username=user.username)  # ...
         user_model.save()
         return user_model.as_entity(self)
 
@@ -105,15 +105,15 @@ class Repo:
         res = UserModel.objects.filter(id=id).first()
         return res and res.as_entity(self)
 
-    def get_user_by_name(self, name: str) -> User | None:
+    def get_user_by_username(self, username: str) -> User | None:
         """
         Возвращает пользователя по его имени или None, если такого пользователя нет.
 
-        :param name: имя пользователя
+        :param username: имя пользователя
         :return: пользователь или None
         """
 
-        res = UserModel.objects.filter(name=name).first()
+        res = UserModel.objects.filter(username=username).first()
         return res and res.as_entity(self)
 
     def get_project_by_id(self, id: UUID) -> Project | None:

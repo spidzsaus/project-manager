@@ -4,12 +4,14 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
 from projectsapp.entities.projects import Project
 from projectsapp.entities.records import JournalRecord
 from projectsapp.entities.tasks import Task
 from projectsapp.entities.users import User
 from projectsapp.entities.task_category import TaskCategory
+from projectsapp.managers import UserManager
 
 if TYPE_CHECKING:
     from projectsapp.repo import Repo
@@ -66,13 +68,17 @@ class TaskDependencyModel(models.Model):
     dependency_timestamp = models.DateTimeField(auto_now_add=True)
 
 
-class UserModel(models.Model):
+class UserModel(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
-    name = models.CharField(max_length=128)
-    # ...
+
+    objects = UserManager()  # type: ignore
+
+    # username = models.CharField(max_length=128, unique=True)
+
+    # USERNAME_FIELD = "name"
 
     def as_entity(self, repo: Repo) -> User:
-        return User(id=self.id, name=self.name, repo=repo)
+        return User(id=self.id, username=self.username, repo=repo)
 
 
 class MembershipModel(models.Model):

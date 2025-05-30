@@ -17,7 +17,7 @@ class RepoTest(TestCase):
 
         user = User(
             id=UUID("00000000-0000-0000-0000-000000000000"),
-            name="test_user",
+            username="test_user",
             repo=repo,
         )
         project = Project(

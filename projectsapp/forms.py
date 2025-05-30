@@ -1,6 +1,8 @@
 from django import forms
 from django.forms.widgets import SelectDateWidget
-from fastapi import dependencies
+from django.contrib.auth.forms import UserCreationForm
+
+from projectsapp.models import UserModel
 
 
 class CreateProjectForm(forms.Form):
@@ -61,7 +63,7 @@ class CreateTaskForm(forms.Form):
 
 
 class InviteUserForm(forms.Form):
-    name = forms.CharField(
+    username = forms.CharField(
         label="User name",
         max_length=100,
         widget=forms.TextInput(
@@ -128,3 +130,14 @@ class AddTaskToCategoryForm(forms.Form):
     def __init__(self, tasks, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["task"].choices = tasks
+
+
+class LoginForm(forms.Form):
+    username = forms.CharField(label="Username")
+    password = forms.CharField(label="Password", widget=forms.PasswordInput)
+
+
+class SignupForm(UserCreationForm):
+    class Meta:
+        model = UserModel
+        fields = ("username", "password1", "password2")

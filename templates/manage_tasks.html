@@ -31,7 +31,7 @@
                   <td>{{ task.end_date|date:"M d, Y" }}</td>
                   <td>
                       {% for user in task.get_users %}
-                      <span class="badge bg-primary-subtle text-primary mb-1">{{ user.name }}</span>
+                      <span class="badge bg-primary-subtle text-primary mb-1">{{ user.username }}</span>
                       {% endfor %}
                   </td>
                   <td>

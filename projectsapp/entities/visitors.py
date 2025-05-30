@@ -31,7 +31,7 @@ class Visitor(ABC):
 
 class ChoicesVisitor(Visitor):
     def visit_user(self, user):
-        return (user.id, user.name)
+        return (user.id, user.username)
 
     def visit_project(self, project):
         return (project.id, project.name)

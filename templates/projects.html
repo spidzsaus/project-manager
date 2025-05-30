@@ -42,7 +42,7 @@
                             <div class="avatar-group">
                                 {% for user in project.get_users|slice:":3" %}
                                 <div class="avatar avatar-sm">
-                                    {{ user.name|slice:":1"|upper }}
+                                    {{ user.username|slice:":1"|upper }}
                                 </div>
                                 {% endfor %}
                                 {% if project.get_users|length > 3 %}

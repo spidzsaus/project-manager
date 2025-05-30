@@ -4,7 +4,10 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.contrib import messages
-from matplotlib import category
+from django.contrib.auth import authenticate as old_authenticate, login, logout
+from django.contrib.auth.decorators import login_required, permission_required
+from django.shortcuts import render, redirect
+
 
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task, CyclicDependencyError, SelfDependencyError
@@ -19,41 +22,30 @@ from projectsapp.forms import (
     AssignDependencyForm,
     AddTaskToCategoryForm,
     AddUserToCategoryForm,
+    LoginForm,
+    SignupForm,
 )
+from projectsapp.models import UserModel
 from projectsapp.repo import Repo
 
 
-def mock_authenticate():
-    """
-    Фейковая функция аутентификации, возвращает всегда пользователя с ID 00000000-0000-0000-0000-000000000000
-    и создаёт его, если такой не найден.
-    """
-
-    repo = Repo()  # Создание объекта класса Repo для доступа к БД
-    test_id = UUID(
-        "00000000-0000-0000-0000-000000000000"
-    )  # Идентификатор тестового пользователя
-
-    test_user = repo.get_user_by_id(
-        test_id
-    )  # Получение тестового пользователя из базы данных
-
-    if not test_user:
-        # Создание нового оъекта класса User.
-        test_user = User(id=test_id, name="test_user", repo=Repo())
-
-        # Сохранение нового пользователя в базе данных
-        repo.insert_user(test_user)
-
-    return test_user
+def authenticate(request, repo=None) -> User:
+    if repo is None:
+        repo = Repo()
+    user: UserModel = request.user
+    assert user is not None
+    return user.as_entity(repo)
 
 
 def home(request):
     return render(request, "home.html")
 
 
+@login_required
 def create_project(request):
-    user = mock_authenticate()
+    repo = Repo()
+    user = authenticate(request, repo)
+    assert user is not None
 
     if request.method == "POST":
         form = CreateProjectForm(request.POST)
@@ -61,7 +53,6 @@ def create_project(request):
         if form.is_valid():
             name = form.cleaned_data["name"]
 
-            repo = Repo()
             project = Project(name=name, repo=Repo())
             repo.insert_project(project)
 
@@ -74,9 +65,11 @@ def create_project(request):
     return render(request, "create_project.html", {"form": form})
 
 
+@login_required
 def create_task(request, project_id: UUID):
-    user = mock_authenticate()
     repo = Repo()
+    user = authenticate(request, repo)
+
     project = repo.get_project_by_id(project_id)
 
     assert project is not None  # todo: handle this case
@@ -130,9 +123,11 @@ def create_task(request, project_id: UUID):
     )
 
 
+@login_required
 def invite_user(request, project_id: UUID):
-    user = mock_authenticate()
     repo = Repo()
+    user = authenticate(request, repo)
+
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
 
@@ -140,10 +135,10 @@ def invite_user(request, project_id: UUID):
         form = InviteUserForm(request.POST)
 
         if form.is_valid():
-            name = form.cleaned_data["name"]
+            username = form.cleaned_data["username"]
 
             repo = Repo()
-            user = repo.get_user_by_name(name)
+            user = repo.get_user_by_username(username)
             if not user:
                 return HttpResponseNotFound("User not found")
 
@@ -155,7 +150,6 @@ def invite_user(request, project_id: UUID):
 
 
 def create_task_form(project_id: UUID) -> CreateTaskForm:
-    user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
@@ -172,7 +166,6 @@ def create_task_form(project_id: UUID) -> CreateTaskForm:
 
 
 def assign_user_form(project_id: UUID) -> AssignUserForm:
-    user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
@@ -185,7 +178,6 @@ def assign_user_form(project_id: UUID) -> AssignUserForm:
 
 
 def assign_dependency_form(project_id: UUID) -> AssignDependencyForm:
-    user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
@@ -197,17 +189,19 @@ def assign_dependency_form(project_id: UUID) -> AssignDependencyForm:
 
 
 def invite_user_form(project_id: UUID) -> InviteUserForm:
-    user = mock_authenticate()
     repo = Repo()
     project = repo.get_project_by_id(project_id)
 
     return InviteUserForm()
 
 
+@login_required
 def project(request, project_id: UUID):
-    no_fade = request.GET.get("no_fade") == "True"
-    user = mock_authenticate()
     repo = Repo()
+    no_fade = request.GET.get("no_fade") == "True"
+    user = authenticate(request, repo)
+    assert user is not None
+
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
     is_admin = user.is_admin_in_project(project)
@@ -232,13 +226,13 @@ def project(request, project_id: UUID):
             "has_tasks": has_tasks,
             "no_fade": no_fade,
             "is_admin": is_admin,
-            "user": user,
         },
     )
 
 
+@login_required
 def manage_project(request, project_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
@@ -262,8 +256,9 @@ def manage_project(request, project_id: UUID):
     )
 
 
+@login_required
 def manage_task(request, project_id: UUID, task_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
@@ -285,8 +280,9 @@ def manage_task(request, project_id: UUID, task_id: UUID):
     )
 
 
+@login_required
 def update_task(request, project_id: UUID, task_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task = repo.get_task_by_id(task_id)
@@ -309,8 +305,9 @@ def update_task(request, project_id: UUID, task_id: UUID):
     )
 
 
+@login_required
 def assign_user_to_task(request, project_id: UUID, task_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task = repo.get_task_by_id(task_id)
@@ -338,8 +335,9 @@ def assign_user_to_task(request, project_id: UUID, task_id: UUID):
     )
 
 
+@login_required
 def remove_user_from_task(request, project_id: UUID, task_id: UUID, user_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task = repo.get_task_by_id(task_id)
@@ -358,8 +356,9 @@ def remove_user_from_task(request, project_id: UUID, task_id: UUID, user_id: UUI
     )
 
 
+@login_required
 def assign_dependency_to_task(request, project_id: UUID, task_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task = repo.get_task_by_id(task_id)
@@ -400,8 +399,9 @@ def assign_dependency_to_task(request, project_id: UUID, task_id: UUID):
     )
 
 
+@login_required
 def remove_dependency_from_task(request, project_id: UUID, task_id: UUID, dep_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task = repo.get_task_by_id(task_id)
@@ -420,13 +420,14 @@ def remove_dependency_from_task(request, project_id: UUID, task_id: UUID, dep_id
     )
 
 
+@login_required
 def projects(request):
     """
     Тестовая страница, которая выводит карточки со всеми проектами, частью которых является
     пользователь.
     """
 
-    user = mock_authenticate()
+    user = authenticate(request)
 
     # Получение всех проектов, в которых участвует тестовый пользователь
     projects_list = user.get_projects()
@@ -441,6 +442,7 @@ def index(request):
     return render(request, "index.html")
 
 
+@login_required
 def start_task(request, project_id: UUID, task_id: UUID):
     repo = Repo()
     task = repo.get_task_by_id(task_id)
@@ -450,6 +452,7 @@ def start_task(request, project_id: UUID, task_id: UUID):
     return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
 
 
+@login_required
 def finish_task(request, project_id: UUID, task_id: UUID):
     repo = Repo()
     task = repo.get_task_by_id(task_id)
@@ -459,6 +462,7 @@ def finish_task(request, project_id: UUID, task_id: UUID):
     return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
 
 
+@login_required
 def change_task_status(request, project_id: UUID, task_id: UUID):
     repo = Repo()
     task = repo.get_task_by_id(task_id)
@@ -471,12 +475,13 @@ def change_task_status(request, project_id: UUID, task_id: UUID):
     return redirect(f"{reverse('projectsapp:project', args=[project_id])}?no_fade=True")
 
 
+@login_required
 def delete_task(request, project_id: UUID, task_id: UUID):
     repo = Repo()
     task = repo.get_task_by_id(task_id)
     assert task is not None  # todo: handle this case
 
-    user = mock_authenticate()
+    user = authenticate(request)
 
     if not user.is_admin_in_project(task.parent_project):
         return HttpResponseForbidden("You are not admin in this project")
@@ -489,12 +494,13 @@ def delete_task(request, project_id: UUID, task_id: UUID):
     )
 
 
+@login_required
 def delete_project(request, project_id: UUID):
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     assert project is not None  # todo: handle this case
 
-    user = mock_authenticate()
+    user = authenticate(request)
 
     if not user.is_admin_in_project(project):
         return HttpResponseForbidden("You are not admin in this project")
@@ -505,8 +511,9 @@ def delete_project(request, project_id: UUID):
     return redirect("projectsapp:projects")
 
 
+@login_required
 def update_task_category(request, project_id: UUID, category_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -531,8 +538,9 @@ def update_task_category(request, project_id: UUID, category_id: UUID):
     )
 
 
+@login_required
 def add_user_to_category(request, project_id: UUID, category_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -570,10 +578,11 @@ def add_user_to_category(request, project_id: UUID, category_id: UUID):
     )
 
 
+@login_required
 def remove_user_from_category(
     request, project_id: UUID, category_id: UUID, user_id: UUID
 ):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -598,8 +607,9 @@ def remove_user_from_category(
     )
 
 
+@login_required
 def add_task_to_category(request, project_id: UUID, category_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -639,10 +649,11 @@ def add_task_to_category(request, project_id: UUID, category_id: UUID):
     )
 
 
+@login_required
 def remove_task_from_category(
     request, project_id: UUID, category_id: UUID, task_id: UUID
 ):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -668,7 +679,7 @@ def remove_task_from_category(
 
 
 def add_user_to_category_form(task_category: TaskCategory) -> AddUserToCategoryForm:
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
 
     project = task_category.project
@@ -683,7 +694,7 @@ def add_user_to_category_form(task_category: TaskCategory) -> AddUserToCategoryF
 
 
 def add_task_to_category_form(task_category: TaskCategory) -> AddTaskToCategoryForm:
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
 
     project = task_category.project
@@ -700,8 +711,9 @@ def add_task_to_category_form(task_category: TaskCategory) -> AddTaskToCategoryF
     return AddTaskToCategoryForm(tasks_choices)
 
 
+@login_required
 def manage_task_category(request, project_id: UUID, category_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -726,8 +738,9 @@ def manage_task_category(request, project_id: UUID, category_id: UUID):
     )
 
 
+@login_required
 def create_task_category(request, project_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
 
@@ -750,8 +763,9 @@ def create_task_category(request, project_id: UUID):
     )
 
 
+@login_required
 def delete_task_category(request, project_id: UUID, category_id: UUID):
-    user = mock_authenticate()
+    user = authenticate(request)
     repo = Repo()
     project = repo.get_project_by_id(project_id)
     task_category = repo.get_task_category_by_id(category_id)
@@ -777,3 +791,38 @@ def delete_task_category(request, project_id: UUID, category_id: UUID):
     return redirect(
         f"{reverse('projectsapp:manage_task_category', args=[project_id, category_id])}?no_fade=True"
     )
+
+
+def user_login(request):
+    if request.method == "POST":
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data["username"]
+            password = form.cleaned_data["password"]
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect("projectsapp:projects")
+            else:
+                form.add_error(None, "Invalid credentials")
+    else:
+        form = LoginForm()
+    return render(request, "login.html", {"form": form})
+
+
+@login_required
+def user_logout(request):
+    logout(request)
+    return redirect("home")
+
+
+def signup(request):
+    if request.method == "POST":
+        form = SignupForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("projectsapp:projects")
+    else:
+        form = SignupForm()
+    return render(request, "signup.html", {"form": form})
