@@ -116,4 +116,9 @@ urlpatterns = [
     path("logout/", views.user_logout, name="logout"),
     path("signup/", views.signup, name="signup"),
     path("home/", views.index, name="home"),
+    path(
+        "projects/<uuid:project_id>/auto_assign/",
+        views.auto_assign_tasks,
+        name="autoassign",
+    ),
 ]

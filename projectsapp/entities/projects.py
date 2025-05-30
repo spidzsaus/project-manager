@@ -139,14 +139,3 @@ class Project(IDComparable):
 
     def get_task_categories(self) -> Iterable[TaskCategory]:
         return self.repo.get_task_categories_for_project(self)
-
-
-class AutoTaskAssigner:
-
-    def __init__(self, repo: Repo, project: Project):
-        self.repo = repo
-        self.project = project
-
-    def auto_assign_tasks(self):
-        all_users = self.project.get_users()
-        all_tasks = self.project.get_tasks()

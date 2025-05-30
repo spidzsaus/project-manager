@@ -766,3 +766,16 @@ class Repo:
         return TaskAssignmentModel.objects.filter(
             task__parent_project__id=project.id, user__id=user.id
         ).count()
+
+    def count_tasks_dependant_on(self, project: Project, task: Task) -> int:
+        return TaskDependencyModel.objects.filter(
+            task__parent_project__id=project.id, depends_on__id=task.id
+        ).count()
+
+    def get_unassigned_tasks(self, project: Project) -> Iterable[Task]:
+        return (
+            model.as_entity(self)
+            for model in TaskModel.objects.filter(
+                parent_project__id=project.id, taskassignmentmodel__isnull=True
+            )
+        )

@@ -11,6 +11,7 @@ from django.shortcuts import render, redirect
 
 
 from projectsapp.analysis_unit import AnalysisUnit
+from projectsapp.auto_task_assigner import AutoTaskAssigner
 from projectsapp.entities.projects import Project
 from projectsapp.entities.tasks import Task, CyclicDependencyError, SelfDependencyError
 from projectsapp.entities.users import User
@@ -826,3 +827,21 @@ def signup(request):
     else:
         form = SignupForm()
     return render(request, "signup.html", {"form": form})
+
+
+@login_required
+def auto_assign_tasks(request, project_id: UUID):
+    repo = Repo()
+    project = repo.get_project_by_id(project_id)
+    if project is None:
+        return HttpResponseNotFound("Project not found")
+
+    if not request.user.as_entity(repo).is_admin_in_project(project):
+        return HttpResponseForbidden("You are not admin in this project")
+
+    auto_assigner = AutoTaskAssigner(repo, project)
+    auto_assigner.auto_assign_tasks()
+    messages.success(request, "Successfully assigned tasks")
+    return redirect(
+        f"{reverse('projectsapp:manage_project', args=[project_id])}?no_fade=True"
+    )
